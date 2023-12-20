@@ -124,7 +124,7 @@ void CFVMFlowSolverBase<V, R>::Allocate(const CConfig& config) {
 
   AllocVectorOfMatrices(nVertex, nDim, Inlet_FlowDir);
 
-  if (config.GetnMarker_NRBCInlet() > 0) { /*--- Store the value of the PrimVar  at the inlet BCNR ---*/
+  if (config.GetNonReflectingBC()) { /*--- Store the value of the PrimVar  at the inlet BCNR ---*/
     AllocVectorOfMatrices(nVertex, nPrimVar, CharacPrimVarSteady);
     /*--- Store the value of the PrimVar Gradient at the inlet BCNR ---*/
     // need to rewrite due to that there is no function initialize gradients

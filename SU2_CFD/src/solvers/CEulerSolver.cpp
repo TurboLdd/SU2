@@ -6889,8 +6889,12 @@ void CEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container,
     }
   }
   END_SU2_OMP_FOR
-  delete [] V_unsteady, V_Grad, V_GradSteady;
-
+  delete[] V_unsteady;
+  for (int iVar = 0; iVar < nPrimVar; iVar++) {
+    delete[] V_Grad[iVar], V_GradSteady[iVar];
+   
+  }
+   delete[] V_Grad, V_GradSteady;
 }
 
 void CEulerSolver::BC_Outlet(CGeometry *geometry, CSolver **solver_container,
