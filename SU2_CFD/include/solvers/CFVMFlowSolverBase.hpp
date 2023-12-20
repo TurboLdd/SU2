@@ -181,6 +181,8 @@ class CFVMFlowSolverBase : public CSolver {
   vector<vector<su2double> > YPlus;             /*!< \brief Yplus for each boundary and vertex. */
   vector<vector<su2double> > UTau;                 /*!< \brief UTau for each boundary and vertex. */
   vector<vector<su2double> > EddyViscWall;         /*!< \brief Eddy viscosuty at the wall for each boundary and vertex. */
+  vector<su2activematrix> CharacPrimVarSteady;        /*!< \brief Value of the characteristic variables at each boundary read from steady initial field. */
+  vector<vector<su2activematrix>> CharacPrimVarGradSteady;        /*!< \brief Value of the characteristic variables gradient at each boundary read from steady initial field. */
 
   bool space_centered;       /*!< \brief True if space centered scheme used. */
   bool euler_implicit;       /*!< \brief True if euler implicit scheme used. */
@@ -2100,6 +2102,47 @@ class CFVMFlowSolverBase : public CSolver {
    */
   inline su2double* GetCharacPrimVar(unsigned short val_marker, unsigned long val_vertex) final {
     return CharacPrimVar[val_marker][val_vertex];
+  }
+
+  /*!
+   * \brief Value of the characteristic variables of steady ini filed at the boundaries.
+   * \param[in] val_marker - Surface marker where the coefficient is computed.
+   * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the coefficient is evaluated.
+   * \return Value of the pressure coefficient.
+   */
+  inline void SetCharacPrimVarSteady(unsigned short val_marker, unsigned long val_vertex, unsigned short val_var,
+                               su2double val_value) final {
+    CharacPrimVarSteady[val_marker][val_vertex][val_var] = val_value;
+  }
+
+    /*!
+   * \brief Value of the characteristic variables of steady ini filed at the boundaries.
+   * \param[in] val_marker - Surface marker where the coefficient is computed.
+   * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the coefficient is evaluated.
+   * \return Value of the pressure coefficient.
+   */
+  inline su2double* GetCharacPrimVarSteady(unsigned short val_marker, unsigned long val_vertex) final {
+    return CharacPrimVarSteady[val_marker][val_vertex];
+  }
+  /*!
+   * \brief Value of the characteristic variables gradient of steady ini filed at the boundaries.
+   * \param[in] val_marker - Surface marker where the coefficient is computed.
+   * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the coefficient is evaluated.
+   * \return Value of the pressure coefficient.
+   */
+  inline void SetCharacPrimVarGradSteady(unsigned short val_marker, unsigned long val_vertex, unsigned short val_var,unsigned short iDim,
+                               su2double val_value) final {
+    CharacPrimVarGradSteady[val_marker][val_vertex][val_var][iDim] = val_value;
+  }
+
+    /*!
+   * \brief Value of the characteristic variables gradient of steady ini filed at the boundaries.
+   * \param[in] val_marker - Surface marker where the coefficient is computed.
+   * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the coefficient is evaluated.
+   * \return Value of the pressure coefficient.
+   */
+  inline su2double GetCharacPrimVarGradSteady(unsigned short val_marker, unsigned long val_vertex,unsigned short iVar,unsigned short iDim) final {
+    return CharacPrimVarGradSteady[val_marker][val_vertex][iVar][iDim];
   }
 
   /*!

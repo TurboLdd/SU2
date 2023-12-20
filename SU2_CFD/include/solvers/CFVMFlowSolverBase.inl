@@ -124,8 +124,24 @@ void CFVMFlowSolverBase<V, R>::Allocate(const CConfig& config) {
 
   AllocVectorOfMatrices(nVertex, nDim, Inlet_FlowDir);
 
+  if (config.GetnMarker_NRBCInlet() > 0) { /*--- Store the value of the PrimVar  at the inlet BCNR ---*/
+    AllocVectorOfMatrices(nVertex, nPrimVar, CharacPrimVarSteady);
+    /*--- Store the value of the PrimVar Gradient at the inlet BCNR ---*/
+    // need to rewrite due to that there is no function initialize gradients
+    // rewrite here without adding func in container_decorators.hpp
+    CharacPrimVarGradSteady.resize(nVertex.size());
+    for (int iMarker = 0; iMarker < nVertex.size(); iMarker++) {
+      CharacPrimVarGradSteady[iMarker].resize(nVertex[iMarker]);
+      for (int iVertex = 0; iVertex < nVertex[iMarker]; iVertex++) {
+        CharacPrimVarGradSteady[iMarker][iVertex].resize(nPrimVar,nDim);
+        for (int iVar = 0; iVar < nPrimVar; iVar++) {
+           for (int iDim = 0; iDim < nDim; iDim++) CharacPrimVarGradSteady[iMarker][iVertex][iVar][iDim] = 0.0;
+        }
+      }
+    }
+    // AllocVectorOfMatrices(nVertex, nPrimVar, CharacPrimVarGradSteady);
+  }
   /*--- Force definition and coefficient arrays for all of the markers ---*/
-
   AllocVectorOfVectors(nVertex, CPressure);
   AllocVectorOfVectors(nVertex, CPressureTarget);
 

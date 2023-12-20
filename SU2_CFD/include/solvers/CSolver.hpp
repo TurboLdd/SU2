@@ -2811,7 +2811,19 @@ public:
    */
   inline virtual su2double *GetCharacPrimVar(unsigned short val_marker,
                                              unsigned long val_vertex) { return nullptr; }
+///ugly
+  inline virtual void SetCharacPrimVarSteady(unsigned short val_marker, unsigned long val_vertex,
+                                             unsigned short val_var, su2double val_value) {}
+  inline virtual su2double* GetCharacPrimVarSteady(unsigned short val_marker, unsigned long val_vertex) {
+    return nullptr;
+  }
+  inline virtual void SetCharacPrimVarGradSteady(unsigned short val_marker, unsigned long val_vertex,
+                                                 unsigned short val_var, unsigned short iDim,su2double val_value) {}
+  inline virtual su2double GetCharacPrimVarGradSteady(unsigned short val_marker, unsigned long val_vertex,unsigned short iVar,unsigned short iDim) {
+    return 0;
+  }
 
+///ugly
   /*!
    * \brief A virtual member
    * \param[in] val_marker - Surface marker where the total temperature is evaluated.
