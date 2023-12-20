@@ -1236,6 +1236,7 @@ private:
   string* lookup_names;         /*!< \brief Names of passive look-up variables. */
   string* user_scalar_names;          /*!< \brief Names of the user defined (auxiliary) transported scalars .*/
   string* user_source_names;          /*!< \brief Names of the source terms for the user defined transported scalars. */
+  bool NonReflectingBC;                /*!< \brief Boolean that activates non-reflecting BC for flamelet LUT approach. */
 
   /*!
    * \brief Set the default values of config options not set in the config file using another config object.
@@ -9788,6 +9789,9 @@ public:
    * \return Max number of iterations of the linear solver for the gradient smoothing.
    */
   unsigned long GetGrad_Linear_Solver_Iter(void) const { return Grad_Linear_Solver_Iter; }
+
+  // nrbc
+  bool GetNonReflectingBC(void) const { return NonReflectingBC; }
 
   /*!
    * \brief Get parsed SST option data structure.

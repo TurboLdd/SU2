@@ -2933,6 +2933,8 @@ void CConfig::SetConfig_Options() {
 
   /*!\brief ROM_SAVE_FREQ \n DESCRIPTION: How often to save snapshots for unsteady problems.*/
   addUnsignedShortOption("ROM_SAVE_FREQ", rom_save_freq, 1);
+/*!\brief NRBC\n DESCRIPTION: Flag for saving data with NonReflectingBC. */
+  addBoolOption("NRBC", NonReflectingBC, false);
 
   /* END_CONFIG_OPTIONS */
 

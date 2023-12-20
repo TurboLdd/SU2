@@ -6490,16 +6490,32 @@ void CEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container,
   unsigned long iVertex, iPoint;
   su2double P_Total, T_Total, Velocity[MAXNDIM], Velocity2, H_Total, Temperature, Riemann,
   Pressure, Density, Energy, Flow_Dir[MAXNDIM], Mach2, SoundSpeed2, SoundSpeed_Total2, Vel_Mag,
-  alpha, aa, bb, cc, dd, Area, UnitNormal[MAXNDIM], Normal[MAXNDIM];
+  alpha, aa, bb, cc, dd, Area, UnitNormal[MAXNDIM], Normal[MAXNDIM], radius, dtime;
   su2double *V_inlet, *V_domain;
-
+//variable
+  su2double *V_steady, *V_unsteady, **V_Grad, **V_GradSteady;  // V_Grad is the gradient of the unsteady part
+  su2double spatialLoc[MAXNDIM], tagentDir[MAXNDIM];
+  su2double chara_Variable[4], chara_Grad[4];
+//varible done
   const bool implicit = (config->GetKind_TimeIntScheme() == EULER_IMPLICIT);
   const su2double Two_Gamma_M1 = 2.0 / Gamma_Minus_One;
   const su2double Gas_Constant = config->GetGas_ConstantND();
   const auto Kind_Inlet = config->GetKind_Inlet();
   const auto Marker_Tag = config->GetMarker_All_TagBound(val_marker);
   const bool tkeNeeded = (config->GetKind_Turb_Model() == TURB_MODEL::SST);
-
+  //
+  bool nr=config->GetNonReflectingBC();
+  bool unsteady = (config->GetTime_Marching() != TIME_MARCHING::STEADY);
+  if ((!unsteady || nDim == 2)&&nr==1) SU2_MPI::Error("Inlet BC only works for unsteady and 3D case\n", CURRENT_FUNCTION);
+  /*--- Loop over all the vertices on this boundary marker ---*/
+  V_unsteady = new su2double[nPrimVar];
+  V_Grad=new su2double* [nPrimVar];
+  V_GradSteady=new su2double* [nPrimVar];
+  for(int iVar=0;iVar<nPrimVar;iVar++){
+    V_Grad[iVar]=new su2double[nDim];
+    V_GradSteady[iVar]=new su2double[nDim];
+  }
+  
   /*--- Loop over all the vertices on this boundary marker ---*/
 
   SU2_OMP_FOR_DYN(OMP_MIN_SIZE)
@@ -6528,6 +6544,33 @@ void CEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container,
       /*--- Retrieve solution at this boundary node ---*/
 
       V_domain = nodes->GetPrimitive(iPoint);
+      if (nr) {
+        /*steady part*/
+        V_domain = nodes->GetPrimitive(iPoint);
+
+        /*first read steady part in domain*/
+        for (int iVar = 0; iVar < nPrimVar; iVar++) {
+          for (int iDim = 0; iDim < nDim; iDim++) V_Grad[iVar][iDim] = nodes->GetGradient_Primitive(iPoint, iVar, iDim);
+        }
+
+        // new su2double*[nPrimVar];//hard coding
+
+        V_steady = GetCharacPrimVarSteady(val_marker, iVertex);
+        /*read frome domain*/  // TODO: get steady from ini-file(domain value)
+        for (int iVar = 0; iVar < nPrimVar; iVar++) {
+          for (int iDim = 0; iDim < nDim; iDim++)
+            V_GradSteady[iVar][iDim] = GetCharacPrimVarGradSteady(val_marker, iVertex, iVar, iDim);
+        }
+
+        /*read frome domain*/  // TODO: get Gradsteady from ini-file(domain value)
+        for (int iVar = 0; iVar < nPrimVar; iVar++) {
+          V_unsteady[iVar] = V_domain[iVar] - V_steady[iVar];  // get unsteady part
+          for (int iDim = 0; iDim < nDim; iDim++) {
+            V_Grad[iVar][iDim] = V_Grad[iVar][iDim] - V_GradSteady[iVar][iDim];  // get unsteady part
+          }
+          V_domain[iVar] = V_steady[iVar];  // use steady part io imply total BC. Here the domain value use steady part
+        }
+      }
 
       /*--- Build the fictitious intlet state based on characteristics ---*/
 
@@ -6718,7 +6761,71 @@ void CEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container,
           SU2_MPI::Error("Unsupported INLET_TYPE.", CURRENT_FUNCTION);
           break;
       }
+      if (nr) {
+        /*unsteady part*/
 
+        if (config->GetBoolTurbomachinery() == 1) {
+          // z direction currently
+          /*pitch wise gradient*/
+          for (iDim = 0; iDim < nDim; iDim++) {
+            spatialLoc[iDim] = geometry->nodes->GetCoord(iPoint, iDim);
+          }
+          radius = sqrt(spatialLoc[0] * spatialLoc[0] + spatialLoc[1] * spatialLoc[1]);
+          tagentDir[0] = -1 * spatialLoc[1] / radius;
+          tagentDir[1] = spatialLoc[0] / radius;
+          tagentDir[2] = 0.0;
+          su2double c_for_soundspeed = sqrt(SoundSpeed2);
+          chara_Variable[0] = 0;
+          chara_Variable[1] = Density * (V_unsteady[1] * tagentDir[0] + V_unsteady[2] * tagentDir[1]) *
+                              c_for_soundspeed;  // determine the boundary normal
+          chara_Variable[2] = Density * (V_unsteady[3]) * c_for_soundspeed + V_unsteady[nDim + 1];
+          chara_Variable[3] = -1 * Density * (V_unsteady[3]) * c_for_soundspeed + V_unsteady[nDim + 1];
+
+          chara_Grad[0] = 0;
+          chara_Grad[1] = Density *
+                          (V_Grad[1][0] * tagentDir[0] + V_Grad[1][1] * tagentDir[1] + V_Grad[2][0] * tagentDir[0] +
+                           V_Grad[2][1] * tagentDir[1]) *
+                          c_for_soundspeed;  // determine the boundary normal
+          chara_Grad[2] = Density * (V_Grad[3][0] * tagentDir[0] + V_Grad[3][1] * tagentDir[1]) * c_for_soundspeed +
+                          (V_Grad[nDim + 1][0] * tagentDir[0] + V_Grad[nDim + 1][1] * tagentDir[1]);
+          chara_Grad[3] =
+              -1 * Density * (V_Grad[3][0] * tagentDir[0] + V_Grad[3][1] * tagentDir[1]) * c_for_soundspeed +
+              (V_Grad[nDim + 1][0] * tagentDir[0] + V_Grad[nDim + 1][0] * tagentDir[0]);
+          /*RK iteration*/
+          // theoritically scheme used here should be insistent with the one used in the solver
+          // but use 1st order for now
+          dtime = config->GetDelta_UnstTime();
+
+          su2double inhomo0 = chara_Grad[1] * (V_unsteady[1] * tagentDir[0] + V_unsteady[2] * tagentDir[1]) +
+                              0.5 * chara_Grad[2] * (V_unsteady[3] + c_for_soundspeed) +
+                              0.5 * chara_Grad[3] * (c_for_soundspeed - V_unsteady[3]);
+          su2double inhomo1 = 0.5 * chara_Grad[1] * (c_for_soundspeed - V_unsteady[2]) +
+                              chara_Grad[2] * (V_unsteady[1] * tagentDir[0] + V_unsteady[2] * tagentDir[1]);
+          chara_Variable[2] = chara_Variable[2] + dtime * (inhomo0);
+          chara_Variable[3] = chara_Variable[3] + dtime * (inhomo1);
+
+          /*transform back*/
+          V_unsteady[1] = chara_Variable[1] / c_for_soundspeed / Density * tagentDir[0];
+          V_unsteady[2] = chara_Variable[1] / c_for_soundspeed / Density * tagentDir[1];
+          V_unsteady[3] =
+              (chara_Variable[2] / c_for_soundspeed / Density - chara_Variable[3] / c_for_soundspeed / Density) *
+              0.5;  // axial
+          V_unsteady[4] = (chara_Variable[2] + chara_Variable[3]) * 0.5;
+          V_unsteady[5] = (chara_Variable[2] / SoundSpeed2 + chara_Variable[3] / SoundSpeed2) * 0.5;
+          /*update unsteady part*/
+          V_inlet[0] = V_inlet[0] + V_unsteady[0];
+          for (iDim = 0; iDim < nDim; iDim++) V_inlet[iDim + 1] = V_inlet[iDim + 1] + V_unsteady[iDim + 1];
+          V_inlet[nDim + 1] = V_inlet[nDim + 1] + V_unsteady[nDim + 1];
+          V_inlet[nDim + 2] = V_inlet[nDim + 2] + V_unsteady[nDim + 2];
+          V_inlet[nDim + 3] = V_inlet[nDim + 3] + V_unsteady[nDim + 3];
+
+        } else {
+          std::cout << "need to judge the direction of the boundary normal" << endl;
+        }
+
+        
+      }
+      /*solve part*/
       /*--- Set various quantities in the solver class ---*/
 
       conv_numerics->SetPrimitive(V_domain, V_inlet);
@@ -6782,6 +6889,7 @@ void CEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container,
     }
   }
   END_SU2_OMP_FOR
+  delete [] V_unsteady, V_Grad, V_GradSteady;
 
 }
 
