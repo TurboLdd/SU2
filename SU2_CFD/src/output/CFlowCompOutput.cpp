@@ -284,7 +284,34 @@ void CFlowCompOutput::SetVolumeOutputFields(CConfig *config){
     AddVolumeOutput("LIMITER_PRESSURE", "Limiter_Pressure", "LIMITER", "Limiter value of the pressure");
     AddVolumeOutput("LIMITER_DENSITY", "Limiter_Density", "LIMITER", "Limiter value of the density");
     AddVolumeOutput("LIMITER_ENTHALPY", "Limiter_Enthalpy", "LIMITER", "Limiter value of the enthalpy");
+      //gradient
+      //pressure
+    AddVolumeOutput("PRESSURE_GRAD-X", "Pressure_grad_x", "GRADIENT", "x-component of the pressure gradient");
+    AddVolumeOutput("PRESSURE_GRAD-Y", "Pressure_grad_y", "GRADIENT", "y-component of the pressure gradient");
+    if (nDim == 3)
+      AddVolumeOutput("PRESSURE_GRAD-Z", "Pressure_grad_z", "GRADIENT", "z-component of the pressure gradient");
+      //density
+    AddVolumeOutput("DENSITY_GRAD-X", "Density_grad_x", "GRADIENT", "x-component of the density gradient");
+    AddVolumeOutput("DENSITY_GRAD-Y", "Density_grad_y", "GRADIENT", "y-component of the density gradient");
+    if (nDim == 3)
+      AddVolumeOutput("DENSITY_GRAD-Z", "Density_grad_z", "GRADIENT", "z-component of the density gradient");
+      //velocity-u
+    AddVolumeOutput("VELOCITYX_GRAD-X", "Velocityx_grad_x", "GRADIENT", "x-component of the velocity-x gradient");
+    AddVolumeOutput("VELOCITYX_GRAD-Y", "Velocityx_grad_y", "GRADIENT", "y-component of the velocity-x gradient");
+    if (nDim == 3)
+      AddVolumeOutput("VELOCITYX_GRAD-Z", "Velocityx_grad_z", "GRADIENT", "z-component of the velocity-x gradient");
+      //velocity-v
+    AddVolumeOutput("VELOCITYY_GRAD-X", "Velocityy_grad_x", "GRADIENT", "x-component of the velocity-y gradient");
+    AddVolumeOutput("VELOCITYY_GRAD-Y", "Velocityy_grad_y", "GRADIENT", "y-component of the velocity-y gradient");
+    if (nDim == 3)
+      AddVolumeOutput("VELOCITYY_GRAD-Z", "Velocityy_grad_z", "GRADIENT", "z-component of the velocity-y gradient");
+       //velocity-w
+    AddVolumeOutput("VELOCITYZ_GRAD-X", "Velocityz_grad_x", "GRADIENT", "x-component of the velocity-z gradient");
+    AddVolumeOutput("VELOCITYZ_GRAD-Y", "Velocityz_grad_y", "GRADIENT", "y-component of the velocity-z gradient");
+    if (nDim == 3)
+      AddVolumeOutput("VELOCITYZ_GRAD-Z", "Velocityz_grad_z", "GRADIENT", "z-component of the velocity-z gradient");
   }
+
 
   SetVolumeOutputFieldsScalarLimiter(config);
 
@@ -371,6 +398,24 @@ void CFlowCompOutput::LoadVolumeData(CConfig *config, CGeometry *geometry, CSolv
     SetVolumeOutputValue("LIMITER_PRESSURE", iPoint, Node_Flow->GetLimiter_Primitive(iPoint, nDim+1));
     SetVolumeOutputValue("LIMITER_DENSITY", iPoint, Node_Flow->GetLimiter_Primitive(iPoint, nDim+2));
     SetVolumeOutputValue("LIMITER_ENTHALPY", iPoint, Node_Flow->GetLimiter_Primitive(iPoint, nDim+3));
+
+    SetVolumeOutputValue("PRESSURE_GRAD-X", iPoint, Node_Flow->GetGradient_Primitive(iPoint,nDim+1,0));
+    SetVolumeOutputValue("PRESSURE_GRAD-Y", iPoint, Node_Flow->GetGradient_Primitive(iPoint,nDim+1,1));
+    if (nDim == 3) SetVolumeOutputValue("PRESSURE_GRAD-Z", iPoint, Node_Flow->GetGradient_Primitive(iPoint,nDim+1,2));
+    SetVolumeOutputValue("DENSITY_GRAD-X", iPoint, Node_Flow->GetGradient_Primitive(iPoint,nDim+2,0));
+    SetVolumeOutputValue("DENSITY_GRAD-Y", iPoint, Node_Flow->GetGradient_Primitive(iPoint,nDim+2,1));
+    if (nDim == 3) SetVolumeOutputValue("DENSITY_GRAD-Z", iPoint, Node_Flow->GetGradient_Primitive(iPoint,nDim+2,2));
+
+
+    SetVolumeOutputValue("VELOCITYX_GRAD-X", iPoint, Node_Flow->GetGradient_Primitive(iPoint,1,0));
+    SetVolumeOutputValue("VELOCITYX_GRAD-Y", iPoint, Node_Flow->GetGradient_Primitive(iPoint,1,1));
+    if (nDim == 3) SetVolumeOutputValue("VELOCITYX_GRAD-Z", iPoint, Node_Flow->GetGradient_Primitive(iPoint,1,2));
+    SetVolumeOutputValue("VELOCITYY_GRAD-X", iPoint, Node_Flow->GetGradient_Primitive(iPoint,2,0));
+    SetVolumeOutputValue("VELOCITYY_GRAD-Y", iPoint, Node_Flow->GetGradient_Primitive(iPoint,2,1));
+    if (nDim == 3) SetVolumeOutputValue("VELOCITYY_GRAD-Z", iPoint, Node_Flow->GetGradient_Primitive(iPoint,2,2));
+    SetVolumeOutputValue("VELOCITYZ_GRAD-X", iPoint, Node_Flow->GetGradient_Primitive(iPoint,3,0));
+    SetVolumeOutputValue("VELOCITYZ_GRAD-Y", iPoint, Node_Flow->GetGradient_Primitive(iPoint,3,1));
+    if (nDim == 3) SetVolumeOutputValue("VELOCITYZ_GRAD-Z", iPoint, Node_Flow->GetGradient_Primitive(iPoint,3,2));
   }
 
   if (config->GetKind_RoeLowDiss() != NO_ROELOWDISS){

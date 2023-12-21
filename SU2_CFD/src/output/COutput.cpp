@@ -221,7 +221,7 @@ void COutput::SetHistoryOutput(CGeometry *geometry,
 
   LoadHistoryData(config, geometry, solver_container);
 
-  ConvergenceMonitoring(config, curInnerIter);
+  ConvergenceMonitoring(config, curInnerIter);  
 
   PostprocessHistoryData(config);
 
