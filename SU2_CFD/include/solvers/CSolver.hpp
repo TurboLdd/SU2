@@ -2822,6 +2822,8 @@ public:
   inline virtual su2double GetCharacPrimVarGradSteady(unsigned short val_marker, unsigned long val_vertex,unsigned short iVar,unsigned short iDim) {
     return 0;
   }
+  //read from steady restart file
+  inline virtual void SetNRPrimiter(const CGeometry* geometry, unsigned short iMarker) {}
 
 ///ugly
   /*!

@@ -2144,14 +2144,14 @@ class CFVMFlowSolverBase : public CSolver {
   inline su2double GetCharacPrimVarGradSteady(unsigned short val_marker, unsigned long val_vertex,unsigned short iVar,unsigned short iDim) final {
     return CharacPrimVarGradSteady[val_marker][val_vertex][iVar][iDim];
   }
-
+  inline void SetNRPrimiter(const CGeometry* geometry, unsigned short iMarker)final;
   /*!
    * \brief Value of the characteristic variables at the boundaries.
    * \param[in] val_marker - Surface marker where the coefficient is computed.
    * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the coefficient is evaluated.
    * \return Value of the pressure coefficient.
    */
-  inline void SetCharacPrimVar(unsigned short val_marker, unsigned long val_vertex, unsigned short val_var,
+ void SetCharacPrimVar(unsigned short val_marker, unsigned long val_vertex, unsigned short val_var,
                                su2double val_value) final {
     CharacPrimVar[val_marker][val_vertex][val_var] = val_value;
   }

@@ -133,9 +133,9 @@ void CFVMFlowSolverBase<V, R>::Allocate(const CConfig& config) {
     for (int iMarker = 0; iMarker < nVertex.size(); iMarker++) {
       CharacPrimVarGradSteady[iMarker].resize(nVertex[iMarker]);
       for (int iVertex = 0; iVertex < nVertex[iMarker]; iVertex++) {
-        CharacPrimVarGradSteady[iMarker][iVertex].resize(nPrimVar,nDim);
-        for (int iVar = 0; iVar < nPrimVar; iVar++) {
-           for (int iDim = 0; iDim < nDim; iDim++) CharacPrimVarGradSteady[iMarker][iVertex][iVar][iDim] = 0.0;
+        CharacPrimVarGradSteady[iMarker][iVertex].resize(nPrimVarGrad,nDim);
+        for (int iVar = 0; iVar < nPrimVarGrad; iVar++) {
+           for (int iDim = 0; iDim < nDim; iDim++) CharacPrimVarGradSteady[iMarker][iVertex][iVar][iDim] = 1.0;
         }
       }
     }
@@ -683,7 +683,22 @@ void CFVMFlowSolverBase<V, R>::ComputeVorticityAndStrainMag(const CConfig& confi
   }
 
 }
-
+// ugly
+template <class V, ENUM_REGIME R>
+void CFVMFlowSolverBase<V, R>::SetNRPrimiter(const CGeometry* geometry, unsigned short iMarker) {
+  unsigned long iPoint;
+  for (unsigned long iVertex = 0; iVertex < nVertex[iMarker]; iVertex++) {
+    iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+    for (int iPrimVar = 0; iPrimVar < nPrimVar; iPrimVar++) {
+      CharacPrimVarSteady[iMarker][iVertex][iPrimVar] = nodes->GetPrimitive(iPoint, iPrimVar);
+    }
+    for(int iPrimGrad = 0; iPrimGrad < nPrimVarGrad; iPrimGrad++) {
+      for(int iDim = 0; iDim < nDim; iDim++) {
+        CharacPrimVarGradSteady[iMarker][iVertex][iPrimGrad][iDim] = nodes->GetGradient_Primitive(iPoint, iPrimGrad, iDim);
+      }
+    }
+  }
+}
 template <class V, ENUM_REGIME R>
 void CFVMFlowSolverBase<V, R>::SetInletAtVertex(const su2double* val_inlet, unsigned short iMarker,
                                                 unsigned long iVertex) {
@@ -973,7 +988,8 @@ void CFVMFlowSolverBase<V, R>::LoadRestart_impl(CGeometry **geometry, CSolver **
 
 template <class V, ENUM_REGIME R>
 void CFVMFlowSolverBase<V, R>::LoadRestart(CGeometry **geometry, CSolver ***solver,
-                                           CConfig *config, int iter, bool update_geo) {
+                                           CConfig *config, int iter, bool update_geo) { 
+                                                                       
   LoadRestart_impl(geometry, solver, config, iter, update_geo);
 }
 

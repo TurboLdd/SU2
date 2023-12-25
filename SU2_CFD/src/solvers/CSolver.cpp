@@ -2936,7 +2936,6 @@ void CSolver::Read_SU2_Restart_Binary(CGeometry *geometry, const CConfig *config
 
   const unsigned long nFields = Restart_Vars[1];
   const unsigned long nPointFile = Restart_Vars[2];
-
   /*--- Read the variable names from the file. Note that we are adopting a
    fixed length of 33 for the string length to match with CGNS. This is
    needed for when we read the strings later. We pad the beginning of the
@@ -2956,7 +2955,7 @@ void CSolver::Read_SU2_Restart_Binary(CGeometry *geometry, const CConfig *config
   Restart_Data = new passivedouble[nFields*nPointFile];
 
   /*--- Read in the data for the restart at all local points. ---*/
-
+///need to identify Inlet boundary points and read in the data for them
   ret = fread(Restart_Data, sizeof(passivedouble), nFields*nPointFile, fhw);
   if (ret != nFields*nPointFile) {
     SU2_MPI::Error("Error reading restart file.", CURRENT_FUNCTION);
@@ -4178,7 +4177,7 @@ void CSolver::BasicLoadRestart(CGeometry *geometry, const CConfig *config, const
 //  Read_SU2_Restart_Metadata(geometry[MESH_0], config, true, filename);
 
   /*--- Read the restart data from either an ASCII or binary SU2 file. ---*/
-
+cout<<"parallel uses here"<<endl;
   if (config->GetRead_Binary_Restart()) {
     Read_SU2_Restart_Binary(geometry, config, filename);
   } else {
