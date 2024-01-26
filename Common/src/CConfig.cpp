@@ -2935,7 +2935,8 @@ void CConfig::SetConfig_Options() {
   addUnsignedShortOption("ROM_SAVE_FREQ", rom_save_freq, 1);
 /*!\brief NRBC\n DESCRIPTION: Flag for saving data with NonReflectingBC. */
   addBoolOption("NRBC", NonReflectingBC, false);
-
+/*!\brief NRBC_2D\n DESCRIPTION: Flag for saving data with NonReflectingBC. */
+  addBoolOption("NRBC2D", NRBC2D, false);
   /* END_CONFIG_OPTIONS */
 
 }

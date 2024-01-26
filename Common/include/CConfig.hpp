@@ -1236,7 +1236,8 @@ private:
   string* lookup_names;         /*!< \brief Names of passive look-up variables. */
   string* user_scalar_names;          /*!< \brief Names of the user defined (auxiliary) transported scalars .*/
   string* user_source_names;          /*!< \brief Names of the source terms for the user defined transported scalars. */
-  bool NonReflectingBC;                /*!< \brief Boolean that activates non-reflecting BC for flamelet LUT approach. */
+  bool NonReflectingBC;                /*!< \brief Boolean that activates non-reflecting BC. */
+  bool NRBC2D;
 
   /*!
    * \brief Set the default values of config options not set in the config file using another config object.
@@ -9792,6 +9793,7 @@ public:
 
   // nrbc
   bool GetNonReflectingBC(void) const { return NonReflectingBC; }
+  bool Get2D_NRBC(void) const { return NRBC2D; }
 
   /*!
    * \brief Get parsed SST option data structure.

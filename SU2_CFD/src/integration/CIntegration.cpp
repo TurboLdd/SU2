@@ -104,6 +104,7 @@ void CIntegration::Space_Integration(CGeometry *geometry,
         solver_container[MainSolver]->BC_Engine_Inflow(geometry, solver_container, conv_bound_numerics, visc_bound_numerics, config, iMarker);
         break;
       case INLET_FLOW:
+      if(config->GetNonReflectingBC()&&config->GetTimeIter()==config->GetRestart_Iter())solver_container[MainSolver]->SetNRPrimiter(geometry,iMarker);
         solver_container[MainSolver]->BC_Inlet(geometry, solver_container, conv_bound_numerics, visc_bound_numerics, config, iMarker);
         break;
       case ACTDISK_OUTLET:
@@ -116,6 +117,7 @@ void CIntegration::Space_Integration(CGeometry *geometry,
         solver_container[MainSolver]->BC_Supersonic_Inlet(geometry, solver_container, conv_bound_numerics, visc_bound_numerics, config, iMarker);
         break;
       case OUTLET_FLOW:
+         if(config->GetNonReflectingBC()&&config->GetTimeIter()==config->GetRestart_Iter())solver_container[MainSolver]->SetNRPrimiter(geometry,iMarker);
         solver_container[MainSolver]->BC_Outlet(geometry, solver_container, conv_bound_numerics, visc_bound_numerics, config, iMarker);
         break;
       case SUPERSONIC_OUTLET:
