@@ -1409,6 +1409,8 @@ void CFlowOutput::SetVolumeOutputFieldsScalarPrimitive(const CConfig* config) {
 
   if (config->GetKind_Turb_Model() != TURB_MODEL::NONE) {
     AddVolumeOutput("EDDY_VISCOSITY", "Eddy_Viscosity", "PRIMITIVE", "Turbulent eddy viscosity");
+    if(config->GetSAParsedOptions().pgomga)
+    AddVolumeOutput("PGOMEGA", "Pgomega", "SOLUTION", "Spalart-Allmaras variable");
   }
 
 }
@@ -1540,6 +1542,8 @@ void CFlowOutput::LoadVolumeDataScalar(const CConfig* config, const CSolver* con
     SetVolumeOutputValue("EDDY_VISCOSITY", iPoint, Node_Flow->GetEddyViscosity(iPoint));
     SetVolumeOutputValue("TURB_DELTA_TIME", iPoint, Node_Turb->GetDelta_Time(iPoint));
     SetVolumeOutputValue("TURB_CFL", iPoint, Node_Turb->GetLocalCFL(iPoint));
+    if(config->GetSAParsedOptions().pgomga)
+    SetVolumeOutputValue("PGOMEGA", iPoint, Node_Turb->GetPgomg(iPoint));
   }
 
   if (config->GetSAParsedOptions().bc) {

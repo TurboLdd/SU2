@@ -41,6 +41,7 @@ class CTurbSAVariable final : public CTurbVariable {
 private:
   VectorType DES_LengthScale;
   VectorType Vortex_Tilting;
+  VectorType Pgomg;
 
 public:
   /*!
@@ -87,4 +88,16 @@ public:
    */
   inline su2double GetVortex_Tilting(unsigned long iPoint) const override { return Vortex_Tilting(iPoint); }
 
+/*!
+   * \brief Get the pgo
+   * \param[in] iPoint - Point index.
+   * \return Value of the pgo.
+   */
+  inline su2double GetPgomg(unsigned long iPoint) const override { return Pgomg(iPoint); }
+
+  /*!
+   * \brief Set the DES Length Scale.
+   * \param[in] iPoint - Point index.
+   */
+  inline void SetPgomg(unsigned long iPoint, su2double val_pgo) override { Pgomg(iPoint) = val_pgo; }
 };

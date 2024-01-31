@@ -342,7 +342,9 @@ void CTurbSASolver::Source_Residual(CGeometry *geometry, CSolver **solver_contai
 
     numerics->SetScalarVar(nodes->GetSolution(iPoint), nullptr);
     numerics->SetScalarVarGradient(nodes->GetGradient(iPoint), nullptr);
-
+    /*--- Set Coord ---*/
+    if(config->GetSAParsedOptions().pgomga)
+    numerics->SetCoord(geometry->nodes->GetCoord(iPoint), nullptr);
     /*--- Set volume ---*/
 
     numerics->SetVolume(geometry->nodes->GetVolume(iPoint));
@@ -392,7 +394,9 @@ void CTurbSASolver::Source_Residual(CGeometry *geometry, CSolver **solver_contai
     if (transition_BC || config->GetKind_Trans_Model() != TURB_TRANS_MODEL::NONE) {
       nodes->SetIntermittency(iPoint,numerics->GetIntermittencyEff());
     }
-
+    /*--- Store the pgomg ---*/
+    if(config->GetSAParsedOptions().pgomga)
+    nodes->SetPgomg(iPoint,numerics->GetPgomegaBridge());
     /*--- Subtract residual and the Jacobian ---*/
 
     LinSysRes.SubtractBlock(iPoint, residual);
