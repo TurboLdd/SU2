@@ -292,7 +292,7 @@ class CDriver : public CDriverBase {
    * \param[in] interface - Class defining the physical transfer of information.
    */
   void PreprocessTurbomachinery(CConfig** config, CGeometry**** geometry, CSolver***** solver,
-                                    CInterface*** interface);
+                                    CInterface*** interface, unsigned short iInst);
 
   /*!
    * \brief Ramp some simulation settings for turbomachinery problems.
@@ -615,6 +615,8 @@ class CHBDriver : public CFluidDriver {
  private:
   unsigned short nInstHB;
   su2double** D; /*!< \brief Harmonic Balance operator. */
+  su2double** Sr; /*!< \brief Harmonic Balance operator for phase lag bc. */
+  su2double** Sl; /*!< \brief Harmonic Balance operator for phase lag bc. */
 
   /*!
    * \brief Computation and storage of the Harmonic Balance method source terms.
@@ -623,6 +625,12 @@ class CHBDriver : public CFluidDriver {
    */
   void SetHarmonicBalance(unsigned short iZone);
 
+    /*!
+   * \brief Computation and storage of the Harmonic Balance method phase lag bc.
+   * \author Xuedong Zheng
+   * \param[in] iZone - Current zone number.
+   */
+  void SetHarmonicBalancePhaseLag();
   /*!
    * \brief Precondition Harmonic Balance source term for stability
    * \author J. Howison

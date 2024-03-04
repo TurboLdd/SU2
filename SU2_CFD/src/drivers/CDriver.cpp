@@ -246,8 +246,7 @@ CDriverBase(confFile, val_nZone, MPICommunicator), StopCalc(false), fsi(false), 
   if (config_container[ZONE_0]->GetBoolTurbomachinery()){
     if (rank == MASTER_NODE)
       cout << endl <<"---------------------- Turbomachinery Preprocessing ---------------------" << endl;
-
-    PreprocessTurbomachinery(config_container, geometry_container, solver_container, interface_container);
+      for(iInst = 0; iInst < nInst[ZONE_0]; iInst++)PreprocessTurbomachinery(config_container, geometry_container, solver_container, interface_container,iInst);
   }
 
 
@@ -686,8 +685,9 @@ void CDriver::InitializeGeometry(CConfig* config, CGeometry **&geometry, bool du
     if (rank == MASTER_NODE)
       cout << "Checking if Euler & Symmetry markers are straight/plane:" << endl;
 
-    for (iMesh = 0; iMesh <= config_container[iZone]->GetnMGLevels(); iMesh++)
-      geometry_container[iZone][iInst][iMesh]->ComputeSurf_Straightness(config_container[iZone], (iMesh==MESH_0) );
+    for (iMesh = 0; iMesh <= config_container[iZone]->GetnMGLevels(); iMesh++){
+    for(iInst = 0; iInst < nInst[iZone]; iInst++)
+      geometry_container[iZone][iInst][iMesh]->ComputeSurf_Straightness(config_container[iZone], (iMesh==MESH_0) );}
 
   }
 
@@ -2628,7 +2628,7 @@ void CDriver::PreprocessOutput(CConfig **config, CConfig *driver_config, COutput
 
 
 void CDriver::PreprocessTurbomachinery(CConfig** config, CGeometry**** geometry, CSolver***** solver,
-                                           CInterface*** interface){
+                                           CInterface*** interface,unsigned short iInst){
 
   unsigned short donorZone,targetZone, nMarkerInt, iMarkerInt;
   unsigned short nSpanMax = 0;
@@ -2641,8 +2641,8 @@ void CDriver::PreprocessTurbomachinery(CConfig** config, CGeometry**** geometry,
   if (rank == MASTER_NODE) cout<<endl<<"Initialize Turbo Vertex Structure." << endl;
   for (iZone = 0; iZone < nZone; iZone++) {
     if (config[iZone]->GetBoolTurbomachinery()){
-      geometry[iZone][INST_0][MESH_0]->ComputeNSpan(config[iZone], iZone, INFLOW, true);
-      geometry[iZone][INST_0][MESH_0]->ComputeNSpan(config[iZone], iZone, OUTFLOW, true);
+      geometry[iZone][iInst][MESH_0]->ComputeNSpan(config[iZone], iZone, INFLOW, true);
+      geometry[iZone][iInst][MESH_0]->ComputeNSpan(config[iZone], iZone, OUTFLOW, true);
       if (rank == MASTER_NODE) cout <<"Number of span-wise sections in Zone "<< iZone<<": "<< config[iZone]->GetnSpanWiseSections() <<"."<< endl;
       if (config[iZone]->GetnSpanWiseSections() > nSpanMax){
         nSpanMax = config[iZone]->GetnSpanWiseSections();
@@ -2650,8 +2650,9 @@ void CDriver::PreprocessTurbomachinery(CConfig** config, CGeometry**** geometry,
 
       config[ZONE_0]->SetnSpan_iZones(config[iZone]->GetnSpanWiseSections(), iZone);
 
-      geometry[iZone][INST_0][MESH_0]->SetTurboVertex(config[iZone], iZone, INFLOW, true);
-      geometry[iZone][INST_0][MESH_0]->SetTurboVertex(config[iZone], iZone, OUTFLOW, true);
+      geometry[iZone][iInst][MESH_0]->SetTurboVertex(config[iZone], iZone, INFLOW, true);
+      geometry[iZone][iInst][MESH_0]->SetTurboVertex(config[iZone], iZone, OUTFLOW, true);
+      //4 changed iInst
     }
   }
 
@@ -2666,15 +2667,18 @@ void CDriver::PreprocessTurbomachinery(CConfig** config, CGeometry**** geometry,
 
   if (rank == MASTER_NODE) cout<<"Initialize solver containers for average and performance quantities." << endl;
   for (iZone = 0; iZone < nZone; iZone++) {
-    solver[iZone][INST_0][MESH_0][FLOW_SOL]->InitTurboContainers(geometry[iZone][INST_0][MESH_0],config[iZone]);
+      solver[iZone][iInst][MESH_0][FLOW_SOL]->InitTurboContainers(geometry[iZone][iInst][MESH_0],config[iZone]);
+    //solver[iZone][INST_0][MESH_0][FLOW_SOL]->InitTurboContainers(geometry[iZone][INST_0][MESH_0],config[iZone]);
   }
 
   // TODO(turbo): make it general for turbo HB
   if (rank == MASTER_NODE) cout<<"Compute inflow and outflow average geometric quantities." << endl;
   for (iZone = 0; iZone < nZone; iZone++) {
-    geometry[iZone][INST_0][MESH_0]->SetAvgTurboValue(config[iZone], iZone, INFLOW, true);
-    geometry[iZone][INST_0][MESH_0]->SetAvgTurboValue(config[iZone],iZone, OUTFLOW, true);
-    geometry[iZone][INST_0][MESH_0]->GatherInOutAverageValues(config[iZone], true);
+    geometry[iZone][iInst][MESH_0]->SetAvgTurboValue(config[iZone], iZone, INFLOW, true);
+    geometry[iZone][iInst][MESH_0]->SetAvgTurboValue(config[iZone],iZone, OUTFLOW, true);
+    geometry[iZone][iInst][MESH_0]->GatherInOutAverageValues(config[iZone], true);
+    //3 changed iInst
+
   }
 
 
@@ -2691,7 +2695,7 @@ void CDriver::PreprocessTurbomachinery(CConfig** config, CGeometry**** geometry,
 
   if (rank == MASTER_NODE) cout << "Transfer average geometric quantities to zone 0." << endl;
   for (iZone = 1; iZone < nZone; iZone++) {
-    interface[iZone][ZONE_0]->GatherAverageTurboGeoValues(geometry[iZone][INST_0][MESH_0],geometry[ZONE_0][INST_0][MESH_0], iZone);
+    interface[iZone][ZONE_0]->GatherAverageTurboGeoValues(geometry[iZone][iInst][MESH_0],geometry[ZONE_0][iInst][MESH_0], iZone);
   }
 
   /*--- Transfer number of blade to ZONE_0 to correctly compute turbo performance---*/
@@ -2702,8 +2706,8 @@ void CDriver::PreprocessTurbomachinery(CConfig** config, CGeometry**** geometry,
 
   if (rank == MASTER_NODE){
     for (iZone = 0; iZone < nZone; iZone++) {
-    areaIn  = geometry[iZone][INST_0][MESH_0]->GetSpanAreaIn(iZone, config[iZone]->GetnSpanWiseSections());
-    areaOut = geometry[iZone][INST_0][MESH_0]->GetSpanAreaOut(iZone, config[iZone]->GetnSpanWiseSections());
+    areaIn  = geometry[iZone][iInst][MESH_0]->GetSpanAreaIn(iZone, config[iZone]->GetnSpanWiseSections());
+    areaOut = geometry[iZone][iInst][MESH_0]->GetSpanAreaOut(iZone, config[iZone]->GetnSpanWiseSections());
     nBlades = config[iZone]->GetnBlades(iZone);
     cout << "Inlet area for Row "<< iZone + 1<< ": " << areaIn*10000.0 <<" cm^2."  <<endl;
     cout << "Oulet area for Row "<< iZone + 1<< ": " << areaOut*10000.0 <<" cm^2."  <<endl;
@@ -2719,7 +2723,7 @@ void CDriver::PreprocessTurbomachinery(CConfig** config, CGeometry**** geometry,
       for (iMarkerInt = 1; iMarkerInt <= nMarkerInt; iMarkerInt++){
         for (targetZone = 0; targetZone < nZone; targetZone++) {
           if (targetZone != donorZone){
-            interface[donorZone][targetZone]->PreprocessAverage(geometry[donorZone][INST_0][MESH_0], geometry[targetZone][INST_0][MESH_0],
+            interface[donorZone][targetZone]->PreprocessAverage(geometry[donorZone][iInst][MESH_0], geometry[targetZone][iInst][MESH_0],
                 config[donorZone], config[targetZone],
                 iMarkerInt);
           }
@@ -2731,24 +2735,24 @@ void CDriver::PreprocessTurbomachinery(CConfig** config, CGeometry**** geometry,
   if(!restart && !discrete_adjoint){
     if (rank == MASTER_NODE) cout<<"Initialize turbomachinery solution quantities." << endl;
     for(iZone = 0; iZone < nZone; iZone++) {
-      solver[iZone][INST_0][MESH_0][FLOW_SOL]->SetFreeStream_TurboSolution(config[iZone]);
+      solver[iZone][iInst][MESH_0][FLOW_SOL]->SetFreeStream_TurboSolution(config[iZone]);
     }
   }
 
   if (rank == MASTER_NODE) cout<<"Initialize inflow and outflow average solution quantities." << endl;
   for(iZone = 0; iZone < nZone; iZone++) {
-    solver[iZone][INST_0][MESH_0][FLOW_SOL]->PreprocessAverage(solver[iZone][INST_0][MESH_0], geometry[iZone][INST_0][MESH_0],config[iZone],INFLOW);
-    solver[iZone][INST_0][MESH_0][FLOW_SOL]->PreprocessAverage(solver[iZone][INST_0][MESH_0], geometry[iZone][INST_0][MESH_0],config[iZone],OUTFLOW);
-    solver[iZone][INST_0][MESH_0][FLOW_SOL]->TurboAverageProcess(solver[iZone][INST_0][MESH_0], geometry[iZone][INST_0][MESH_0],config[iZone],INFLOW);
-    solver[iZone][INST_0][MESH_0][FLOW_SOL]->TurboAverageProcess(solver[iZone][INST_0][MESH_0], geometry[iZone][INST_0][MESH_0],config[iZone],OUTFLOW);
-    solver[iZone][INST_0][MESH_0][FLOW_SOL]->GatherInOutAverageValues(config[iZone], geometry[iZone][INST_0][MESH_0]);
+    solver[iZone][iInst][MESH_0][FLOW_SOL]->PreprocessAverage(solver[iZone][iInst][MESH_0], geometry[iZone][iInst][MESH_0],config[iZone],INFLOW);
+    solver[iZone][iInst][MESH_0][FLOW_SOL]->PreprocessAverage(solver[iZone][iInst][MESH_0], geometry[iZone][iInst][MESH_0],config[iZone],OUTFLOW);
+    solver[iZone][iInst][MESH_0][FLOW_SOL]->TurboAverageProcess(solver[iZone][iInst][MESH_0], geometry[iZone][iInst][MESH_0],config[iZone],INFLOW);
+    solver[iZone][iInst][MESH_0][FLOW_SOL]->TurboAverageProcess(solver[iZone][iInst][MESH_0], geometry[iZone][iInst][MESH_0],config[iZone],OUTFLOW);
+    solver[iZone][iInst][MESH_0][FLOW_SOL]->GatherInOutAverageValues(config[iZone], geometry[iZone][iInst][MESH_0]);
     if (rank == MASTER_NODE){
-      flowAngleIn = solver[iZone][INST_0][MESH_0][FLOW_SOL]->GetTurboVelocityIn(iZone, config[iZone]->GetnSpanWiseSections())[1];
-      flowAngleIn /= solver[iZone][INST_0][MESH_0][FLOW_SOL]->GetTurboVelocityIn(iZone, config[iZone]->GetnSpanWiseSections())[0];
+      flowAngleIn = solver[iZone][iInst][MESH_0][FLOW_SOL]->GetTurboVelocityIn(iZone, config[iZone]->GetnSpanWiseSections())[1];
+      flowAngleIn /= solver[iZone][iInst][MESH_0][FLOW_SOL]->GetTurboVelocityIn(iZone, config[iZone]->GetnSpanWiseSections())[0];
       flowAngleIn = atan(flowAngleIn)*180.0/PI_NUMBER;
       cout << "Inlet flow angle for Row "<< iZone + 1<< ": "<< flowAngleIn <<"°."  <<endl;
-      flowAngleOut = solver[iZone][INST_0][MESH_0][FLOW_SOL]->GetTurboVelocityOut(iZone, config[iZone]->GetnSpanWiseSections())[1];
-      flowAngleOut /= solver[iZone][INST_0][MESH_0][FLOW_SOL]->GetTurboVelocityOut(iZone, config[iZone]->GetnSpanWiseSections())[0];
+      flowAngleOut = solver[iZone][iInst][MESH_0][FLOW_SOL]->GetTurboVelocityOut(iZone, config[iZone]->GetnSpanWiseSections())[1];
+      flowAngleOut /= solver[iZone][iInst][MESH_0][FLOW_SOL]->GetTurboVelocityOut(iZone, config[iZone]->GetnSpanWiseSections())[0];
       flowAngleOut = atan(flowAngleOut)*180.0/PI_NUMBER;
       cout << "Outlet flow angle for Row "<< iZone + 1<< ": "<< flowAngleOut <<"°."  <<endl;
 
@@ -3032,9 +3036,11 @@ void CFluidDriver::Preprocess(unsigned long Iter) {
     for (iZone = 0; iZone < nZone; iZone++) {
       if (config_container[iZone]->GetFluidProblem()) {
         for (iInst = 0; iInst < nInst[iZone]; iInst++) {
-          solver_container[iZone][iInst][MESH_0][FLOW_SOL]->SetInitialCondition(geometry_container[iZone][INST_0], solver_container[iZone][iInst], config_container[iZone], Iter);
+          //INST0
+          solver_container[iZone][iInst][MESH_0][FLOW_SOL]->SetInitialCondition(geometry_container[iZone][iInst], solver_container[iZone][iInst], config_container[iZone], Iter);
           if (config_container[iZone]->GetKind_Species_Model() != SPECIES_MODEL::NONE)
-            solver_container[iZone][iInst][MESH_0][SPECIES_SOL]->SetInitialCondition(geometry_container[iZone][INST_0], solver_container[iZone][iInst], config_container[iZone], Iter);
+          //INST0
+            solver_container[iZone][iInst][MESH_0][SPECIES_SOL]->SetInitialCondition(geometry_container[iZone][iInst], solver_container[iZone][iInst], config_container[iZone], Iter);
         }
       }
     }
@@ -3191,7 +3197,13 @@ CHBDriver::CHBDriver(char* confFile,
 
   /*--- allocate dynamic memory for the Harmonic Balance operator ---*/
   D = new su2double*[nInstHB];
-  for (kInst = 0; kInst < nInstHB; kInst++) D[kInst] = new su2double[nInstHB];
+  Sr = new su2double*[nInstHB];
+  Sl = new su2double*[nInstHB];
+  for (kInst = 0; kInst < nInstHB; kInst++) {
+    D[kInst] = new su2double[nInstHB];
+    Sr[kInst] = new su2double[nInstHB];
+    Sl[kInst] = new su2double[nInstHB];
+  }
 }
 
 CHBDriver::~CHBDriver() {
@@ -3199,8 +3211,12 @@ CHBDriver::~CHBDriver() {
   unsigned short kInst;
 
   /*--- delete dynamic memory for the Harmonic Balance operator ---*/
-  for (kInst = 0; kInst < nInstHB; kInst++) delete [] D[kInst];
-  delete [] D;
+  for (kInst = 0; kInst < nInstHB; kInst++) {
+    delete[] D[kInst];
+    delete[] Sr[kInst];
+    delete[] Sl[kInst];
+  }
+  delete [] D,Sl,Sr;
 }
 
 
@@ -3209,10 +3225,10 @@ void CHBDriver::Run() {
   /*--- Run a single iteration of a Harmonic Balance problem. Preprocess all
    all zones before beginning the iteration. ---*/
 
-  for (iInst = 0; iInst < nInstHB; iInst++)
+  for (iInst = 0; iInst < nInstHB; iInst++){
     iteration_container[ZONE_0][iInst]->Preprocess(output_container[ZONE_0], integration_container, geometry_container,
         solver_container, numerics_container, config_container,
-        surface_movement, grid_movement, FFDBox, ZONE_0, iInst);
+        surface_movement, grid_movement, FFDBox, ZONE_0, iInst);}
 
   for (iInst = 0; iInst < nInstHB; iInst++)
     iteration_container[ZONE_0][iInst]->Iterate(output_container[ZONE_0], integration_container, geometry_container,
@@ -3228,6 +3244,11 @@ void CHBDriver::Run() {
 
 void CHBDriver::Update() {
 
+
+  //1, imarker
+  //2, iInst
+  //3,ivertex
+  //4, iVar
   for (iInst = 0; iInst < nInstHB; iInst++) {
     /*--- Compute the harmonic balance terms across all zones ---*/
     SetHarmonicBalance(iInst);
@@ -3238,6 +3259,12 @@ void CHBDriver::Update() {
   if (config_container[ZONE_0]->GetHB_Precondition() == YES) {
     StabilizeHarmonicBalance();
 
+  }
+  if (config_container[ZONE_0]->GetHB_PhaseLag() == YES) {
+    
+      SetHarmonicBalancePhaseLag();
+
+    
   }
 
   for (iInst = 0; iInst < nInstHB; iInst++) {
@@ -3286,6 +3313,7 @@ void CHBDriver::SetHarmonicBalance(unsigned short iInst) {
   for (iMGlevel = 0; iMGlevel <= config_container[ZONE_0]->GetnMGLevels(); iMGlevel++) {
 
     /*--- Loop over each node in the volume mesh ---*/
+    SU2_OMP_FOR_DYN(256)//TODO: Check if this is the best number of threads
     for (iPoint = 0; iPoint < geometry_container[ZONE_0][iInst][iMGlevel]->GetnPoint(); iPoint++) {
 
       for (iVar = 0; iVar < nVar; iVar++) {
@@ -3334,6 +3362,9 @@ void CHBDriver::SetHarmonicBalance(unsigned short iInst) {
 
       }
     }
+    END_SU2_OMP_FOR
+
+
   }
 
   /*--- Source term for a turbulence model ---*/
@@ -3372,6 +3403,221 @@ void CHBDriver::SetHarmonicBalance(unsigned short iInst) {
   delete [] Psi;
   delete [] Psi_old;
 
+}
+/*currently adjoint phaselag is not supported*/
+void CHBDriver::SetHarmonicBalancePhaseLag() {
+  unsigned short iInst, jInst;
+  unsigned short iVar, jVar, iMGlevel = 0;
+  unsigned short nVar = solver_container[ZONE_0][INST_0][MESH_0][FLOW_SOL]->GetnVar();
+  unsigned long iVertex, iPoint, iPeriodic;
+  unsigned short iMarker;
+  bool implicit = (config_container[ZONE_0]->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
+  bool adjoint = (config_container[ZONE_0]->GetContinuous_Adjoint());
+  bool ransturb = (config_container[ZONE_0]->GetKind_Solver() == MAIN_SOLVER::RANS);
+  if (adjoint) {
+    SU2_MPI::Error("Turn off the adjoint solve when you want to use Phase Lag BC.", CURRENT_FUNCTION);
+    // implicit = (config_container[ZONE_0]->GetKind_TimeIntScheme_AdjFlow() == EULER_IMPLICIT);
+  }
+  unsigned short nVar_Turb=1;//very ugly!!!here i want to loop the vertex only once to deduce the memory reading,so i defined the pointer here
+  if (ransturb) {
+    nVar_Turb = solver_container[ZONE_0][INST_0][MESH_0][TURB_SOL]->GetnVar();
+  }
+
+  /*--- Retrieve values from the config file ---*/
+  auto* U = new su2double[nVar];
+  auto** dU = new su2double*[nVar];
+  auto* U2U = new su2double[nVar];      // right to left
+  auto** dU2dU = new su2double*[nVar];  // implicit right to left
+
+  for (iVar = 0; iVar < nVar; iVar++) {
+    dU2dU[iVar] = new su2double[nVar];
+    dU[iVar] = new su2double[nVar];
+  }
+  auto* U_Turb = new su2double[nVar_Turb];
+  auto* U2U_Turb = new su2double[nVar_Turb];
+  auto** dU_Turb = new su2double*[nVar_Turb];
+  auto** dU2dU_Turb = new su2double*[nVar_Turb];
+  for (iVar = 0; iVar < nVar_Turb; iVar++) {
+    dU_Turb[iVar] = new su2double[nVar_Turb];
+    dU2dU_Turb[iVar] = new su2double[nVar_Turb];
+  }
+  // auto* Psi = new su2double[nVar];// adjoint variable
+  // auto* Psi_old = new su2double[nVar];//implicit adjoint variable
+  //  initialize the array
+
+  // su2double deltaU, deltaPsi;
+
+
+
+
+  //
+
+  /*--- Compute various bc  for explicit direct, implicit direct, and adjoint problems ---*/
+  /*--- Loop over all grid levels ---*/
+  // periodic BC should be solved on finest mesh
+  // for (iMGlevel = 0; iMGlevel <= config_container[ZONE_0]->GetnMGLevels(); iMGlevel++) {
+  /*--- Step1: determined the periodic pair to be matched ---*/
+  unsigned short nPeriodic = config_container[ZONE_0]->GetnMarker_Periodic() / 2;
+  // 1,find the periodic pair
+  for (unsigned short val_periodic = 1; val_periodic <= nPeriodic; val_periodic++) {
+    for (iMarker = 0; iMarker < config_container[ZONE_0]->GetnMarker_All(); iMarker++) {
+      if (config_container[ZONE_0]->GetMarker_All_KindBC(iMarker) == PERIODIC_BOUNDARY) {
+        iPeriodic = config_container[ZONE_0]->GetMarker_All_PerBound(iMarker);
+        if ((iPeriodic == val_periodic) || (iPeriodic == val_periodic + nPeriodic)) {
+          /*--- Loop over each node in the periodic mesh ---*/
+          // 2,loop the node
+          for (iInst = 0; iInst < nInstHB; iInst++) {
+            SU2_OMP_FOR_DYN(256)  // TODO: Check if this is the best number of threads
+            for (iVertex = 0; iVertex < geometry_container[ZONE_0][iInst][iMGlevel]->nVertex[iMarker]; iVertex++) {
+              iPoint = geometry_container[ZONE_0][iInst][iMGlevel]->vertex[iMarker][iVertex]->GetNode();
+              /*--- Step across the columns ---*/
+              // initialize the temp array for each iPoint
+              for (iVar = 0; iVar < nVar; iVar++) {
+                U2U[iVar] = 0.0;
+
+                if (implicit) {
+                  for (jVar = 0; jVar < nVar; jVar++) {
+                    dU2dU[iVar][jVar] = 0.0;
+                  }
+                }
+              }
+              if (ransturb) {
+                for (iVar = 0; iVar < nVar_Turb; iVar++) {
+                  U_Turb[iVar] = 0.0;
+                  if (implicit) {
+                    for (jVar = 0; jVar < nVar_Turb; jVar++) {
+                      dU2dU_Turb[iVar][jVar] = 0.0;
+                    }
+                  }
+                }
+              }
+
+              // 3,hb cross
+              for (jInst = 0; jInst < nInstHB; jInst++) {
+                /*--- Retrieve solution at this node in current zone ---*/
+                // 4,loop variable
+                for (iVar = 0; iVar < nVar; iVar++) {
+                  if (!adjoint) {
+                    U[iVar] = solver_container[ZONE_0][jInst][iMGlevel][FLOW_SOL]->LinSysRes(iPoint, iVar);
+                    if (iPeriodic == val_periodic) {
+                      U2U[iVar] += Sl[iInst][jInst] * U[iVar];
+                    } else if (iPeriodic == val_periodic + nPeriodic) {
+                      U2U[iVar] += Sr[iInst][jInst] * U[iVar];
+                    }
+                    // get jacobian
+                    if (implicit) {
+                      for (jVar = 0; jVar < nVar; jVar++) {
+                        dU[iVar][jVar] = solver_container[ZONE_0][jInst][iMGlevel][FLOW_SOL]->Jacobian.GetBlock(
+                            iPoint, iPoint, iVar, jVar);
+                        if (iPeriodic == val_periodic) {
+                          dU2dU[iVar][jVar] += Sl[iInst][jInst] * dU[iVar][jVar];
+                        } else if (iPeriodic == val_periodic + nPeriodic) {
+                          dU2dU[iVar][jVar] += Sr[iInst][jInst] * dU[iVar][jVar];
+                        }
+                      }
+                    }
+                  }
+                  /*--- Phase Lag for a turbulence model ---*/
+                  if (ransturb) {
+                    /*--- Extra variables needed if we have a turbulence model. ---*/
+
+                    /*--- Retrieve solution at this node in current zone ---*/
+                    for (iVar = 0; iVar < nVar_Turb; iVar++) {
+                      U_Turb[iVar] =
+                          solver_container[ZONE_0][jInst][MESH_0][TURB_SOL]->GetNodes()->GetSolution(iPoint, iVar);
+                      if (iPeriodic == val_periodic) {
+                        U2U_Turb[iVar] += U_Turb[iVar] * Sl[iInst][jInst];
+                      } else if (iPeriodic == val_periodic + nPeriodic) {
+                        U2U_Turb[iVar] += U_Turb[iVar] * Sr[iInst][jInst];
+                      }
+                      if (implicit) {
+                        for (jVar = 0; jVar < nVar_Turb; jVar++) {
+                          dU_Turb[iVar][jVar] = solver_container[ZONE_0][jInst][iMGlevel][TURB_SOL]->Jacobian.GetBlock(
+                              iPoint, iPoint, iVar, jVar);
+                          if (iPeriodic == val_periodic) {
+                            dU2dU_Turb[iVar][jVar] += Sl[iInst][jInst] * dU_Turb[iVar][jVar];
+                          } else if (iPeriodic == val_periodic + nPeriodic) {
+                            dU2dU_Turb[iVar][jVar] += Sr[iInst][jInst] * dU_Turb[iVar][jVar];
+                          }
+                        }
+                      }
+                    }
+                  }
+
+                  // else {
+                  //  Psi[iVar] = solver_container[ZONE_0][jInst][iMGlevel][ADJFLOW_SOL]->LinSysRes(iPoint, iVar);
+
+                  /*if (implicit) {
+                    Psi_old[iVar] =
+                  solver_container[ZONE_0][jInst][iMGlevel][ADJFLOW_SOL]->GetNodes()->GetSolution_Old( iPoint, iVar);
+                    deltaPsi = Psi[iVar] - Psi_old[iVar];
+                    // need to add the matrix production
+                  }*/
+                  //}
+                }
+
+                /*--- Store sources for current row ---*/
+                for (iVar = 0; iVar < nVar; iVar++) {
+                  if (!adjoint) {
+                    if (iPeriodic == val_periodic) {
+                      solver_container[ZONE_0][iInst][iMGlevel][FLOW_SOL]->LinSysRes.AddBlock(iPoint, U2U);
+                      if (implicit) {
+                        solver_container[ZONE_0][iInst][iMGlevel][FLOW_SOL]->Jacobian.AddBlock2Diag(iPoint, dU2dU);
+                      }
+                    } else if (iPeriodic == val_periodic + nPeriodic) {
+                      solver_container[ZONE_0][iInst][iMGlevel][FLOW_SOL]->LinSysRes.AddBlock(iPoint, U2U);
+                      if (implicit) {
+                        solver_container[ZONE_0][iInst][iMGlevel][FLOW_SOL]->Jacobian.AddBlock2Diag(iPoint, dU2dU);
+                      }
+                    }
+                  }
+                  if (ransturb) {
+                    if (iPeriodic == val_periodic) {
+                      solver_container[ZONE_0][iInst][iMGlevel][TURB_SOL]->LinSysRes.SubtractBlock(iPoint, U2U);
+                      if (implicit) {
+                        solver_container[ZONE_0][iInst][iMGlevel][TURB_SOL]->Jacobian.AddBlock2Diag(iPoint, dU2dU);
+                      }
+                    } else if (iPeriodic == val_periodic + nPeriodic) {
+                      solver_container[ZONE_0][iInst][iMGlevel][TURB_SOL]->LinSysRes.SubtractBlock(iPoint, U2U_Turb);
+                      if (implicit) {
+                        solver_container[ZONE_0][iInst][iMGlevel][TURB_SOL]->Jacobian.AddBlock2Diag(iPoint, dU2dU_Turb);
+                      }
+                    }
+                  }
+                  /*else {
+                    if (iPeriodic == val_periodic) {
+                      solver_container[ZONE_0][iInst][iMGlevel][ADJFLOW_SOL]->SetCharacPrimVarPhaseLagR(
+                          iMarker, iVertex, iVar, Ur2Ul[iVar]);
+                    } else if (iPeriodic == val_periodic + nPeriodic) {
+                      solver_container[ZONE_0][iInst][iMGlevel][ADJFLOW_SOL]->SetCharacPrimVarPhaseLagL(
+                          iMarker, iVertex, iVar, Ul2Ur[iVar]);
+                    }
+                  }*/
+                }
+              }
+            }
+            END_SU2_OMP_FOR
+          }
+        }
+      }
+    }
+  }
+  //}
+
+  for (iVar = 0; iVar < nVar; iVar++) {
+    delete[] dU2dU[iVar];
+    delete[] dU[iVar];
+  }
+  for (iVar = 0; iVar < nVar_Turb; iVar++) {
+    delete[] dU2dU_Turb[iVar];
+    delete[] dU_Turb[iVar];
+  }
+  delete[] U, dU, U2U, dU2dU;
+  delete[] U_Turb,U2U_Turb,dU_Turb,dU2dU_Turb;
+
+
+  // delete[] Psi;
+  // delete[] Psi_old;
 }
 
 void CHBDriver::StabilizeHarmonicBalance() {
@@ -3540,13 +3786,18 @@ void CHBDriver::ComputeHBOperator() {
   unsigned short i, j, k, iInst;
 
   auto *Omega_HB       = new su2double[nInstHB];
+  auto *TimeLag_HB       = new su2double[nInstHB];
   auto **E    = new complex<su2double>*[nInstHB];
   auto **Einv = new complex<su2double>*[nInstHB];
   auto **DD   = new complex<su2double>*[nInstHB];
+  auto **SSR   = new complex<su2double>*[nInstHB];
+  auto **SSL   = new complex<su2double>*[nInstHB];
   for (iInst = 0; iInst < nInstHB; iInst++) {
     E[iInst]    = new complex<su2double>[nInstHB];
     Einv[iInst] = new complex<su2double>[nInstHB];
     DD[iInst]   = new complex<su2double>[nInstHB];
+    SSR[iInst]   = new complex<su2double>[nInstHB];
+    SSL[iInst]   = new complex<su2double>[nInstHB];
   }
 
   /*--- Get simualation period from config file ---*/
@@ -3559,13 +3810,19 @@ void CHBDriver::ComputeHBOperator() {
   for (iInst = 0; iInst < nInstHB; iInst++) {
     Omega_HB[iInst]  = config_container[ZONE_0]->GetOmega_HB()[iInst];
     Omega_HB[iInst] /= config_container[ZONE_0]->GetOmega_Ref(); //TODO: check
+    TimeLag_HB[iInst]  = config_container[ZONE_0]->GetPhaseLag_HB()[iInst];// Now, only uniform time sampling
   }
 
-  /*--- Build the diagonal matrix of the frequencies DD ---*/
+  /*--- Build the diagonal matrix of the frequencies DD and Phase Shifted SS---*/
   for (i = 0; i < nInstHB; i++) {
     for (k = 0; k < nInstHB; k++) {
       if (k == i ) {
         DD[i][k] = J*Omega_HB[k];
+        if(config_container[ZONE_0]->GetHB_PhaseLag() == YES){
+          SSR[i][k] = complex<su2double>(cos(TimeLag_HB[k])) + J*complex<su2double>(sin(TimeLag_HB[k]));
+          SSL[i][k] = complex<su2double>(cos(TimeLag_HB[k])) - J*complex<su2double>(sin(TimeLag_HB[k]));
+        }
+       
       }
     }
   }
@@ -3656,13 +3913,21 @@ void CHBDriver::ComputeHBOperator() {
 
   /*---  Temporary matrix for performing product  ---*/
   auto **Temp    = new complex<su2double>*[nInstHB];
+  auto **SRTemp    = new complex<su2double>*[nInstHB];
+  auto **SLTemp    = new complex<su2double>*[nInstHB];
 
   /*---  Temporary complex HB operator  ---*/
   auto **Dcpx    = new complex<su2double>*[nInstHB];
+  auto **SRcpx    = new complex<su2double>*[nInstHB];
+  auto **SLcpx    = new complex<su2double>*[nInstHB];
 
   for (iInst = 0; iInst < nInstHB; iInst++){
     Temp[iInst]    = new complex<su2double>[nInstHB];
+    SRTemp[iInst]    = new complex<su2double>[nInstHB];
+    SLTemp[iInst]    = new complex<su2double>[nInstHB];
     Dcpx[iInst]   = new complex<su2double>[nInstHB];
+    SRcpx[iInst]   = new complex<su2double>[nInstHB];
+    SLcpx[iInst]   = new complex<su2double>[nInstHB];
   }
 
 
@@ -3671,6 +3936,10 @@ void CHBDriver::ComputeHBOperator() {
     for (int col = 0; col < nInstHB; col++) {
       for (int inner = 0; inner < nInstHB; inner++) {
         Temp[row][col] += Einv[row][inner] * DD[inner][col];
+        if(config_container[ZONE_0]->GetHB_PhaseLag() == YES){
+        SRTemp[row][col] += Einv[row][inner] * SSR[inner][col];
+        SLTemp[row][col] += Einv[row][inner] * SSL[inner][col];
+        }
       }
     }
   }
@@ -3681,6 +3950,10 @@ void CHBDriver::ComputeHBOperator() {
     for (col = 0; col < nInstHB; col++) {
       for (inner = 0; inner < nInstHB; inner++) {
         Dcpx[row][col] += Temp[row][inner] * E[inner][col];
+        if(config_container[ZONE_0]->GetHB_PhaseLag() == YES){
+        SRcpx[row][col] += SRTemp[row][inner] * E[inner][col];
+        SLcpx[row][col] += SRTemp[row][inner] * E[inner][col];
+        }
       }
     }
   }
@@ -3689,6 +3962,10 @@ void CHBDriver::ComputeHBOperator() {
   for (i = 0; i < nInstHB; i++) {
     for (k = 0; k < nInstHB; k++) {
       D[i][k] = real(Dcpx[i][k]);
+      if(config_container[ZONE_0]->GetHB_PhaseLag() == YES){
+      Sr[i][k] = real(SRcpx[i][k]);
+      Sl[i][k] = real(SLcpx[i][k]);
+      }
     }
   }
 
@@ -3697,14 +3974,26 @@ void CHBDriver::ComputeHBOperator() {
     delete [] E[iInst];
     delete [] Einv[iInst];
     delete [] DD[iInst];
+    delete [] SSR[iInst];
+    delete [] SSL[iInst];
     delete [] Temp[iInst];
+    delete [] SRTemp[iInst];
+    delete [] SLTemp[iInst];
     delete [] Dcpx[iInst];
+    delete [] SRcpx[iInst];
+    delete [] SLcpx[iInst];
   }
   delete [] E;
   delete [] Einv;
   delete [] DD;
+  delete [] SSR;
+  delete [] SSL;
   delete [] Temp;
+  delete [] SRTemp;
+  delete [] SLTemp;
   delete [] Dcpx;
-  delete [] Omega_HB;
+  delete [] SRcpx;
+  delete [] SLcpx;
+  delete [] Omega_HB,TimeLag_HB;
 
 }

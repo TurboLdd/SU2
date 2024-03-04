@@ -772,6 +772,7 @@ private:
   unsigned short nCFL_AdaptParam;     /*!< \brief Number of CFL parameters provided in config. */
   bool CFL_Adapt;        /*!< \brief Use adaptive CFL number. */
   bool HB_Precondition;  /*!< \brief Flag to turn on harmonic balance source term preconditioning */
+  bool HB_PhaseLag;      /*!< \brief Flag to turn on phase lag for harmonic balance */
   su2double RefArea,     /*!< \brief Reference area for coefficient computation. */
   RefElemLength,         /*!< \brief Reference element length for computing the slope limiting epsilon. */
   RefSharpEdges,         /*!< \brief Reference coefficient for detecting sharp edges. */
@@ -960,8 +961,9 @@ private:
   nMarkerPlunging_Ampl,           /*!< \brief Number of values provided for plunging amplitude of marker. */
   nRough_Wall;                    /*!< \brief Number of rough walls. */
   su2double  *Omega_HB;           /*!< \brief Frequency for Harmonic Balance Operator (in rad/s). */
+  su2double  *PhaseLag_HB;
   unsigned short
-  nOmega_HB,                      /*!< \brief Number of frequencies in Harmonic Balance Operator. */
+  nOmega_HB,nPhaseLag_HB,                      /*!< \brief Number of frequencies in Harmonic Balance Operator. */
   nMoveMotion_Origin,             /*!< \brief Number of motion origins. */
   *MoveMotion_Origin;             /*!< \brief Keeps track if we should move moment origin. */
   vector<vector<vector<su2double> > > Aeroelastic_np1, /*!< \brief Aeroelastic solution at time level n+1. */
@@ -6056,12 +6058,21 @@ public:
    * \return Harmonic Balance Frequency pointer.
    */
   const su2double* GetOmega_HB(void) const { return  Omega_HB; }
-
+  /*!
+   * \brief Get the Harmonic Balance phase lag pointer.
+   * \return Harmonic Balance Frequency pointer.
+   */
+  const su2double* GetPhaseLag_HB(void) const { return  PhaseLag_HB; }
   /*!
    * \brief Get if harmonic balance source term is to be preconditioned
    * \return yes or no to harmonic balance preconditioning
    */
   bool GetHB_Precondition(void) const { return HB_Precondition; }
+    /*!
+   * \brief Get if or not turn on phase lag 
+   * \return yes or no to use phase lag
+   */
+  bool GetHB_PhaseLag(void) const { return HB_PhaseLag; }
 
   /*!
    * \brief Get if we should update the motion origin.

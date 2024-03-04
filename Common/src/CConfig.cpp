@@ -996,6 +996,7 @@ void CConfig::SetPointersNull() {
   /* Harmonic Balance Frequency pointer */
 
   Omega_HB = nullptr;
+  PhaseLag_HB = nullptr;
 
   /*--- Initialize some default arrays to NULL. ---*/
 
@@ -1761,6 +1762,8 @@ void CConfig::SetConfig_Options() {
   addDoubleOption("HB_PERIOD", HarmonicBalance_Period, -1.0);
   /* DESCRIPTION:  Turn on/off harmonic balance preconditioning */
   addBoolOption("HB_PRECONDITION", HB_Precondition, false);
+  /* DESCRIPTION:  Turn on/off harmonic balance phase lag */
+  addBoolOption("HB_PHASELAG", HB_PhaseLag, false);
   /* DESCRIPTION: Starting direct solver iteration for the unsteady adjoint */
   addLongOption("UNST_ADJOINT_ITER", Unst_AdjointIter, 0);
   /* DESCRIPTION: Number of iterations to average the objective */
@@ -2269,6 +2272,7 @@ void CConfig::SetConfig_Options() {
   /* Harmonic Balance config */
   /* DESCRIPTION: Omega_HB = 2*PI*frequency - frequencies for Harmonic Balance method */
   addDoubleListOption("OMEGA_HB", nOmega_HB, Omega_HB);
+  addDoubleListOption("PHASELAG_LIST_HB", nPhaseLag_HB, PhaseLag_HB);
 
   /*!\par CONFIG_CATEGORY: Equivalent Area \ingroup Config*/
   /*--- Options related to the equivalent area ---*/
@@ -4207,6 +4211,16 @@ void CConfig::SetPostprocessing(SU2_COMPONENT val_software, unsigned short val_i
   } else {
       if (nOmega_HB != nTimeInstances) {
         SU2_MPI::Error("Length of omega_HB  must match the number TIME_INSTANCES!!" , CURRENT_FUNCTION);
+      }
+    }
+     /* Initialize the Phase Lag list pointer */
+    if (PhaseLag_HB == nullptr) {
+      PhaseLag_HB = new su2double[nPhaseLag_HB];
+      for (unsigned short iZone = 0; iZone < nPhaseLag_HB; iZone++ )
+        PhaseLag_HB[iZone] = 0.0;
+  } else {
+      if (nPhaseLag_HB != nTimeInstances) {
+        SU2_MPI::Error("Length of nPhaseLag_HB  must match the number TIME_INSTANCES!!I.E. each harmonic should have a phase specified" , CURRENT_FUNCTION);
       }
     }
   }
