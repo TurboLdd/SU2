@@ -3142,6 +3142,13 @@ void CFluidDriver::DynamicMeshUpdate(unsigned long TimeIter) {
     if ((config_container[iZone]->GetGrid_Movement()) && (!harmonic_balance)) {
       iteration_container[iZone][INST_0]->SetGrid_Movement(geometry_container[iZone][INST_0], surface_movement[iZone], grid_movement[iZone][INST_0], solver_container[iZone][INST_0], config_container[iZone], 0, TimeIter );
     }
+    else if((config_container[iZone]->GetGrid_Movement()) && harmonic_balance){
+      for(iInst = 0; iInst < nInst[iZone]; iInst++){
+        iteration_container[iZone][iInst]->SetGrid_Movement(geometry_container[iZone][iInst], surface_movement[iZone], grid_movement[iZone][iInst], solver_container[iZone][iInst], config_container[iZone], 0, TimeIter );
+        iteration_container[iZone][iInst]->ComputeGridVelocityHBinIter( geometry_container[iZone][iInst], solver_container[iZone][iInst], config_container[iZone], iInst);
+      }
+
+    }
   }
 
 }

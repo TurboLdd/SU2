@@ -101,6 +101,7 @@ class CIteration {
   void SetMesh_Deformation(CGeometry** geometry, CSolver** solver_container, CNumerics*** numerics_container,
                            CConfig* config_container, RECORDING kind_recording);
 
+  void ComputeGridVelocityHBinIter(CGeometry **geometry,CSolver*** solver, const CConfig *config,const unsigned short iInst) ;
   /*!
    * \brief A virtual member.
    * \param[in] output - Pointer to the COutput class.

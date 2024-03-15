@@ -35,6 +35,7 @@ void CIteration::SetGrid_Movement(CGeometry** geometry, CSurfaceMovement* surfac
                                   unsigned long IntIter, unsigned long TimeIter) {
   unsigned short Kind_Grid_Movement = config->GetKind_GridMovement();
   bool adjoint = config->GetContinuous_Adjoint();
+  bool harmonic_balance = config->GetTime_Marching() == TIME_MARCHING::HARMONIC_BALANCE;
 
   unsigned short val_iZone = config->GetiZone();
 
@@ -160,7 +161,7 @@ void CIteration::SetGrid_Movement(CGeometry** geometry, CSurfaceMovement* surfac
     /*--- Update the grid velocities on the fine mesh using finite
        differencing based on node coordinates at previous times. ---*/
 
-    if (!adjoint) {
+    if (!adjoint&&!harmonic_balance) {
       if (rank == MASTER_NODE) cout << " Computing grid velocities by finite differencing." << endl;
       geometry[MESH_0]->SetGridVelocity(config);
     }
@@ -195,6 +196,10 @@ void CIteration::SetMesh_Deformation(CGeometry** geometry, CSolver** solver, CNu
 
   /*--- Continue recording. ---*/
   AD::EndPassive(wasActive);
+}
+
+void  CIteration::ComputeGridVelocityHBinIter(CGeometry **geometry,CSolver*** solver, const CConfig *config,const unsigned short iInst){
+  solver[MESH_0][MESH_SOL]->ComputeGridVelocityHB(geometry, config, iInst);
 }
 
 void CIteration::Output(COutput* output, CGeometry**** geometry, CSolver***** solver, CConfig** config,

@@ -4142,7 +4142,13 @@ public:
    */
   inline virtual void SetMesh_Stiffness(CNumerics **numerics,
                                         CConfig *config) { }
-
+                                        
+  /*!
+   * \brief A virtual member.
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] referenceCoord - Determine if the mesh is deformed from the reference or from the current coordinates.
+   */
+  inline virtual void ComputeGridVelocityHB(CGeometry **geometry, const CConfig *config,const unsigned short iInst){ }
   /*!
    * \brief A virtual member.
    * \param[in] geometry - Geometrical definition.

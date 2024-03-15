@@ -420,6 +420,33 @@ class Solver:
 
                 else:
                     raise Exception("{} is an invalid option !".format(this_param))
+    def __readAnsysMesh(self):
+        """
+        This method reads the ansys 3D mesh and sets the structural model.
+        The file should be ASCII.
+        """
+        with open(self.Mesh_file, "r") as meshfile:
+            print("Opened mesh file " + self.Mesh_file + ".")
+            while 1:
+                line = meshfile.readline()
+                if not line:
+                    break
+                if line.find("N") == 0:
+                    line = line.strip("\r\n")
+                    self.node.append(Point())
+                    line = line[1:]
+                    ID = int(line[0:8])
+                    x = float(line[24:32])
+                    y = float(line[32:40])
+                    z = float(line[40:48])
+                    self.node[self.nPoint].SetCoord((x, y, z))
+                    self.node[self.nPoint].SetID(ID)
+                    self.node[self.nPoint].SetCoord0((x, y, z))
+                    self.node[self.nPoint].SetCoord_n((x, y, z))
+                    self.nPoint += 1
+                    continue
+                if line.find("E") == 0:
+                    break
 
     def __readNastranMesh(self):
         """

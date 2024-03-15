@@ -6074,6 +6074,7 @@ public:
    */
   bool GetHB_PhaseLag(void) const { return HB_PhaseLag; }
 
+su2double GetnOmega_HB(void) const { return nOmega_HB; }
   /*!
    * \brief Get if we should update the motion origin.
    * \param[in] val_marker - Value of the marker in which we are interested.

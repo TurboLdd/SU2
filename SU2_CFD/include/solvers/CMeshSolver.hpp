@@ -84,6 +84,12 @@ protected:
    * \param[in] config - Definition of the particular problem.
    */
   void ComputeGridVelocity(CGeometry **geometry, const CConfig *config) const;
+    /*!
+   * \brief Compute the grid velocity from imposed motion in harmonic.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   */
+  void ComputeGridVelocityHB(CGeometry **geometry, const CConfig *config,const unsigned short iInst) const;
 
   /*!
    * \brief Compute the grid velocity form the velocity at deformable boundary.

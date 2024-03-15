@@ -529,7 +529,7 @@ void CMeshSolver::DeformMesh(CGeometry **geometry, CNumerics **numerics, CConfig
   SetMinMaxVolume(geometry[MESH_0], config, true);
 
   /*--- The Grid Velocity is only computed if the problem is time domain ---*/
-  if (time_domain && !config->GetFSI_Simulation())
+  if (time_domain && !config->GetFSI_Simulation()&&!(config->GetTime_Marching() ==TIME_MARCHING::HARMONIC_BALANCE))
     ComputeGridVelocity(geometry, config);
 
   }
@@ -650,6 +650,38 @@ void CMeshSolver::ComputeGridVelocity(CGeometry **geometry, const CConfig *confi
 
   for (auto iMGlevel = 1u; iMGlevel <= config->GetnMGLevels(); iMGlevel++)
     geometry[iMGlevel]->SetRestricted_GridVelocity(geometry[iMGlevel-1]);
+
+}
+void CMeshSolver::ComputeGridVelocityHB(CGeometry **geometry, const CConfig *config,const unsigned short iInst) const {
+  su2double Period=config->GetHarmonicBalance_Period();
+  su2double iNVnInst=1/config->GetnOmega_HB();
+  su2double Omega=2.0*acos(-1.0)/Period;
+  SU2_OMP_FOR_STAT(omp_chunk_size)
+  for (unsigned long iPoint = 0; iPoint < nPoint; iPoint++) {
+
+    /*--- Coordinates of the current point at n+1, n, & n-1 time levels. ---*/
+
+
+    const su2double* Disp_n   = nodes->GetSolution_time_n(iPoint);
+
+
+    /*--- Compute mesh velocity for this point with 1st or 2nd-order approximation. ---*/
+
+    for (unsigned short iDim = 0; iDim < nDim; iDim++) {
+
+      su2double GridVel = 0.0;
+      
+        GridVel = LinSysSol(iPoint, iDim)*Omega*cos(Omega*iInst*iNVnInst*Period);//90degree phase shift
+
+
+      geometry[MESH_0]->nodes->SetGridVel(iPoint, iDim, GridVel);
+    }
+  }
+  END_SU2_OMP_FOR
+
+  for (auto iMGlevel = 1u; iMGlevel <= config->GetnMGLevels(); iMGlevel++)
+    geometry[iMGlevel]->SetRestricted_GridVelocity(geometry[iMGlevel-1]);
+
 
 }
 
