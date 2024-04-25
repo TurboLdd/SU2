@@ -7102,7 +7102,7 @@ void CEulerSolver::BC_Outlet(CGeometry *geometry, CSolver **solver_container,
 
           ra = sqrt(spatialLoc[0] * spatialLoc[0] + spatialLoc[1] * spatialLoc[1]);
           theta = atan2(spatialLoc[1], spatialLoc[0]);
-          deltaP = 5000 * sin(omegg * time + 8 * theta) * _jn(8, 9.648 * ra / 0.5);
+          //deltaP = 5000 * sin(omegg * time + 8 * theta) * _jn(8, 9.648 * ra / 0.5);
           // cout<<"radd"<<3.054*ra/0.5<<endl;
            Pressure   = 101000+deltaP;//}
            //cout<<deltaP<<endl;

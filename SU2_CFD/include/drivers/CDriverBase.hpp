@@ -276,6 +276,7 @@ class CDriverBase {
    */
   map<string, unsigned short> GetMarkerIndices() const;
 
+  map<string, unsigned short> GetAllBoundaryMarkers() const ;
   /*!
    * \brief Get all the boundary markers tags with their associated types.
    * \return Map of boundary markers tags to their types.
@@ -700,6 +701,7 @@ class CDriverBase {
       nodes->SetSourceTerm_VelAdjoint(iPoint, iDim, adjointVelocity[iDim]);
     }
   }
+
 
 /// \}
 

@@ -86,6 +86,7 @@ class FSIConfig:
                 or (this_param == "RESTART_ITER")
                 or (this_param == "TIME_TRESHOLD")
                 or (this_param == "NB_FSI_ITER")
+                or (this_param == "NUM_HB")
             ):
                 self._ConfigContent[this_param] = int(this_value)
 
@@ -96,6 +97,7 @@ class FSIConfig:
                 or (this_param == "UNST_TIMESTEP")
                 or (this_param == "UNST_TIME")
                 or (this_param == "FSI_TOLERANCE")
+                or (this_param == "HB_PERIOD")
             ):
                 self._ConfigContent[this_param] = float(this_value)
 
@@ -112,6 +114,7 @@ class FSIConfig:
                 or (this_param == "TIME_MARCHING")
                 or (this_param == "IMPOSED_MOTION")
                 or (this_param == "MAPPING_MODES")
+                or (this_param == "HARMONIC_BALANCE")
             ):
                 self._ConfigContent[this_param] = this_value
 

@@ -436,3 +436,19 @@ map<string, unsigned short> CDriverBase::GetPrimitiveIndices() const {
       main_config->GetKind_Regime() == ENUM_REGIME::INCOMPRESSIBLE,
       main_config->GetNEMOProblem(), nDim, main_config->GetnSpecies()));
 }
+
+map<string, unsigned short> CDriverBase::GetAllBoundaryMarkers() const {
+
+  map<string, unsigned short>  allBoundariesMap;
+  unsigned short iMarker, nBoundaryMarkers;
+  string Marker_Tag;
+
+  nBoundaryMarkers = config_container[ZONE_0]->GetnMarker_All();
+
+  for(iMarker=0; iMarker < nBoundaryMarkers; iMarker++){
+    Marker_Tag = config_container[ZONE_0]->GetMarker_All_TagBound(iMarker);
+    allBoundariesMap[Marker_Tag] = iMarker;
+  }
+
+  return allBoundariesMap;
+}

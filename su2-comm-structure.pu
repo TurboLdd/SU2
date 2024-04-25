@@ -1,0 +1,12 @@
+@startuml1
+title MPI Comm
+note right:This is a sequence diagram for MPI Comm Used in Driver
+
+
+Comm--.PreprocessP2PComms
+InitiateComms--.PostP2PRecvs
+InitiateComms--.PostP2PSends
+InitiateComms--.GetCommCountAndType
+InitiateComms--.AllocateP2PComms
+Comm--.CompleteComms
+Comm--.InitiateComms

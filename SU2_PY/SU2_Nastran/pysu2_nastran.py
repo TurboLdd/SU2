@@ -301,7 +301,9 @@ class Solver:
         self.__readConfig()
 
         self.Mesh_file = self.Config["MESH_FILE"]
-        self.Punch_file = self.Config["PUNCH_FILE"]
+        if self.Config["HARMONIC_BALANCE"] == "NO":
+            self.Punch_file = self.Config["PUNCH_FILE"]
+
         self.FSI_marker = self.Config["MOVING_MARKER"]
         self.Unsteady = self.Config["TIME_MARCHING"] == "YES"
         self.ImposedMotion = ImposedMotion
@@ -332,16 +334,20 @@ class Solver:
 
         print("\n")
         print(" Reading the mesh ".center(80, "-"))
-        self.__readNastranMesh()
+        if self.Config["HARMONIC_BALANCE"] == "NO":
+            self.__readNastranMesh()
+        else:
+            self.__readAnsysMesh()
 
         print("\n")
-        print(" Creating the structural model ".center(80, "-"))
-        self.__setStructuralMatrices()
+        if self.Config["HARMONIC_BALANCE"] == "NO":
+            print(" Creating the structural model ".center(80, "-"))
+            self.__setStructuralMatrices()
 
-        print("\n")
-        print(" Setting the integration parameters ".center(80, "-"))
-        self.__setIntegrationParameters()
-        self.__setInitialConditions()
+            print("\n")
+            print(" Setting the integration parameters ".center(80, "-"))
+            self.__setIntegrationParameters()
+            self.__setInitialConditions()
 
         # Prepare the output file
         if self.Config["RESTART_SOL"] == "NO":
@@ -407,6 +413,7 @@ class Solver:
                     or (this_param == "PUNCH_FILE")
                     or (this_param == "RESTART_SOL")
                     or (this_param == "MOVING_MARKER")
+                    or (this_param == "HARMONIC_BALANCE")
                 ):
                     self.Config[this_param] = this_value
 
@@ -425,28 +432,48 @@ class Solver:
         This method reads the ansys 3D mesh and sets the structural model.
         The file should be ASCII.
         """
+        self.nPoint=0
+        self.nDof=3
+        iPoint=0
+        markerTag='1'
+        self.markers[markerTag] = []
         with open(self.Mesh_file, "r") as meshfile:
             print("Opened mesh file " + self.Mesh_file + ".")
             while 1:
                 line = meshfile.readline()
+
+                
                 if not line:
                     break
-                if line.find("N") == 0:
+                if line.find("Nnodes")==0:
+                    self.nPoint=int(eval(line[8:-1]))
+                    self.Ux = np.zeros((self.nPoint, self.nDof))
+                    self.Uy = np.zeros((self.nPoint, self.nDof))
+                    self.Uz = np.zeros((self.nPoint, self.nDof))
+                    continue
+                if len(line) > 44 and len(line)<160:
                     line = line.strip("\r\n")
                     self.node.append(Point())
-                    line = line[1:]
-                    ID = int(line[0:8])
-                    x = float(line[24:32])
-                    y = float(line[32:40])
-                    z = float(line[40:48])
-                    self.node[self.nPoint].SetCoord((x, y, z))
-                    self.node[self.nPoint].SetID(ID)
-                    self.node[self.nPoint].SetCoord0((x, y, z))
-                    self.node[self.nPoint].SetCoord_n((x, y, z))
-                    self.nPoint += 1
+                    line = line.split(',')
+                    ID = iPoint
+                    x = float(line[0])
+                    y = float(line[1])
+                    z = float(line[2])
+                    self.node[iPoint].SetCoord((x, y, z))
+                    self.node[iPoint].SetID(ID)
+                    self.node[iPoint].SetCoord0((x, y, z))
+                    self.node[iPoint].SetCoord_n((x, y, z))
+                    self.Ux[iPoint][0]=float(line[3])
+                    self.Uy[iPoint][0]=float(line[4])
+                    self.Uz[iPoint][0]=float(line[5])
+                    self.markers[markerTag].append(iPoint)
+                    iPoint += 1
                     continue
-                if line.find("E") == 0:
-                    break
+        self.q = np.zeros((self.nDof, 1))
+        self.qdot = np.zeros((self.nDof, 1))
+        self.qddot = np.zeros((self.nDof, 1))
+        self.a = np.zeros((self.nDof, 1))
+
 
     def __readNastranMesh(self):
         """

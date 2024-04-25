@@ -110,7 +110,12 @@ def main():
         print("\n")
         print(" Initializing fluid solver ".center(80, "*"))
     try:
-        FluidSolver = pysu2.CSinglezoneDriver(CFD_ConFile, 1, comm)
+        if FSI_config["HARMONIC_BALANCE"]=="YES":
+            print('HB')
+            FluidSolver = pysu2.CHBDriver(CFD_ConFile, 1, comm)
+            print('HB')
+        else:
+            FluidSolver = pysu2.CSinglezoneDriver(CFD_ConFile, 1, comm)
     except TypeError as exception:
         print("A TypeError occured in pysu2.CSinglezoneDriver : ", exception)
         if have_MPI:
@@ -128,6 +133,11 @@ def main():
 
     # --- Initialize the solid solver --- #
     # Serial solvers
+    num_inst=1
+    SolidSolver=[]
+    if FSI_config["HARMONIC_BALANCE"]=="YES":
+        if myid == rootProcess:
+            SolidSolver=[]
     if CSD_Solver in ["NATIVE"]:
         if myid == rootProcess:
             print("\n")
@@ -138,9 +148,22 @@ def main():
                 if FSI_config["IMPOSED_MOTION"] == "NO":
                     SolidSolver = pysu2_nastran.Solver(CSD_ConFile, False)
                 else:
-                    SolidSolver = pysu2_nastran.Solver(CSD_ConFile, True)
+                    if FSI_config["HARMONIC_BALANCE"]=="YES":
+                        num_inst=FluidSolver.GetnInst()
+                        
+                        for iInst in range(0, num_inst):
+                            SolidSolver.append(pysu2_nastran.Solver(CSD_ConFile, True))
+                    else:
+                        SolidSolver = pysu2_nastran.Solver(CSD_ConFile, True)
         else:
-            SolidSolver = None
+            if FSI_config["HARMONIC_BALANCE"]=="YES":
+                num_inst=FluidSolver.GetnInst()
+                        
+                for iInst in range(0, num_inst):
+                    SolidSolver.append(None)
+            else:
+                SolidSolver = None
+        
     # Parallel solvers
     # For now we are only using serial solvers
     else:
@@ -148,31 +171,66 @@ def main():
 
     if have_MPI:
         comm.barrier()
+    if FSI_config["HARMONIC_BALANCE"]=="YES":
+        FSIInterface= []
+        for iInst in range(num_inst):
+            
+            if myid == rootProcess:
+                if have_MPI:
+                    comm.barrier()
+                print('root process HB')
+                FSIInterface.append(FSI.InterfaceHB(FSI_config, FluidSolver, SolidSolver[iInst], have_MPI,num_inst,iInst))
+                if have_MPI:
+                    comm.barrier()
+                FSIInterface[iInst].connect(FSI_config, FluidSolver, SolidSolver[iInst])
+                if have_MPI:
+                    comm.barrier()
+                FSIInterface[iInst].interfaceMapping(FluidSolver, SolidSolver[iInst], FSI_config)
 
-    # --- Initialize and set the FSI interface (coupling environement) --- #
-    if myid == rootProcess:
-        print("\n")
-        print(" Initializing FSI interface ".center(80, "*"))
+            else:
+                
+                if have_MPI:
+                    comm.barrier()
+                
+                FSIInterface.append(FSI.InterfaceHB(FSI_config, FluidSolver, None, have_MPI,num_inst,iInst))
+                
+                if have_MPI:
+                    comm.barrier()
+                print('process HB append finish',myid)
+                FSIInterface[iInst].connect(FSI_config, FluidSolver, None)
+                if have_MPI:
+                    comm.barrier()
+                FSIInterface[iInst].interfaceMapping(FluidSolver, None, FSI_config)
     if have_MPI:
         comm.barrier()
-    FSIInterface = FSI.Interface(FSI_config, FluidSolver, SolidSolver, have_MPI)
 
-    if myid == rootProcess:
-        print("\n")
-        print(" Connect fluid and solid solvers ".center(80, "*"))
-    if have_MPI:
-        comm.barrier()
-    FSIInterface.connect(FSI_config, FluidSolver, SolidSolver)
+    
+    else:
+        # --- Initialize and set the FSI interface (coupling environement) --- #
+        if myid == rootProcess:
+            print("\n")
+            print(" Initializing FSI interface ".center(80, "*"))
+        if have_MPI:
+            comm.barrier()
+        FSIInterface = FSI.Interface(FSI_config, FluidSolver, SolidSolver, have_MPI)
 
-    if myid == rootProcess:
-        print("\n")
-        print(" Mapping fluid-solid interfaces ".center(80, "*"))
-    if have_MPI:
-        comm.barrier()
-    FSIInterface.interfaceMapping(FluidSolver, SolidSolver, FSI_config)
+        if myid == rootProcess:
+            print("\n")
+            print(" Connect fluid and solid solvers ".center(80, "*"))
+        if have_MPI:
+            comm.barrier()
+        FSIInterface.connect(FSI_config, FluidSolver, SolidSolver)
 
-    if have_MPI:
-        comm.barrier()
+        if myid == rootProcess:
+            print("\n")
+            print(" Mapping fluid-solid interfaces ".center(80, "*"))
+        if have_MPI:
+            comm.barrier()
+        FSIInterface.interfaceMapping(FluidSolver, SolidSolver, FSI_config)
+
+        if have_MPI:
+            comm.barrier()
+
 
     if FSI_config["MAPPING_MODES"] == "NO":
         # --- Launch a steady or unsteady FSI computation --- #
@@ -194,6 +252,37 @@ def main():
                     print(
                         "A KeyboardInterrupt occured in FSIInterface.UnsteadyFSI : ",
                         exception,
+                    )
+        if FSI_config["HARMONIC_BALANCE"] == "YES":
+            try:
+                fluidSolverProcessors=set()
+                for iInst in range(num_inst):
+                    FSIInterface[iInst].HarmonicBalanceFSI(FSI_config, FluidSolver, SolidSolver[iInst])
+                    
+                    fluidSolverProcessors=fluidSolverProcessors|set((FSIInterface[iInst].getFluidSolverProcessors()))
+                    
+                comm.barrier()
+                if myid in fluidSolverProcessors:
+                    for iteration in range(FSI_config["NUM_HB"]):
+                        RunFluidSolver(comm,myid,FluidSolver,FSI_config)
+                    
+            except NameError as exception:
+                if myid == rootProcess:
+                    print(
+                        "An NameError occured in FSIInterface.HarmonicBalanceFSI : ",
+                        exception
+                    )
+            except TypeError as exception:
+                if myid == rootProcess:
+                    print(
+                        "A TypeError occured in FSIInterface.HarmonicBalanceFSI : ",
+                        exception
+                    )
+            except KeyboardInterrupt as exception:
+                if myid == rootProcess:
+                    print(
+                        "A KeyboardInterrupt occured in FSIInterface.HarmonicBalanceFSI : ",
+                        exception
                     )
         else:
             try:
@@ -233,7 +322,10 @@ def main():
     # --- Exit cleanly the fluid and solid solvers --- #
     FluidSolver.Finalize()
     if myid == rootProcess:
-        SolidSolver.exit()
+        if FSI_config["HARMONIC_BALANCE"]=="YES":
+            SolidSolver[0].exit()
+        else:
+            SolidSolver.exit()
 
     if have_MPI:
         comm.barrier()
@@ -249,7 +341,58 @@ def main():
 
     return
 
+def RunFluidSolver(comm,myid,FluidSolver,FSI_config):
+    if myid==0:
+        print("\n**********************************")
+        print("* Begin harmonic FSI computation *")
+        print("**********************************\n")
 
+    # --- External temporal loop --- #
+    for iTer in range(10):
+        for TimeIter in range(FSI_config["NUM_HB"]):
+            if iTer==0:
+                FluidSolver.Preprocess(
+                    TimeIter
+                )  # set some parameters before temporal fluid iteration and dynamic mesh update
+        
+            FluidSolver.DynamicMeshUpdate(TimeIter)
+
+            # --- Fluid solver call for FSI subiteration --- #
+        if myid==0:
+            print("\nLaunching fluid solver for one single dual-time iteration..."
+        )
+        comm.barrier()
+
+        FluidSolver.Run()
+        print('run')
+        comm.barrier()
+        #FluidSolver.Postprocess()
+        #comm.barrier()
+
+            # --- Surface fluid loads interpolation and communication --- #
+
+
+
+        for TimeIter in range(FSI_config["NUM_HB"]):
+
+            # --- Update, monitor and output the fluid solution before the next time step  ---#
+
+            FluidSolver.Update()
+            print('update')
+            if iTer==0:
+                FluidSolver.Monitor(TimeIter)
+                print('monitor')
+        if iTer==0:
+            FluidSolver.Output(TimeIter)
+        print('output')
+
+    # --- End of the temporal loop --- #
+
+    comm.barrier()
+    if myid==0:
+        print("\n*************************")
+        print("*  End FSI computation  *")
+        print("*************************\n")   
 # -------------------------------------------------------------------
 #  Run Main Program
 # -------------------------------------------------------------------

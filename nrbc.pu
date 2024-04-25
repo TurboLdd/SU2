@@ -1,0 +1,28 @@
+@startuml
+skinparam defaultFontSize 20
+title NRBC
+start
+#lightblue:<color:white>:Read Steady State Solution for each BC</color>;
+:loop vertex;
+:find cooresponding node:ipoint;
+if (ipoint is on dmomain: prevent halo node) then (yes)
+  :get v_domain;
+  #lightblue:<color:white>calculate v_unsteady v_unsteady=v_domain-v_steady</color>;
+  :get specified pressure P_ext;
+  :get density,velocoty in domain:Density,Velocity;
+  :get pressure in domain:Pressure;
+  :calculate speed of sound accoring to domain value and isoentropic relation;
+  :calculate mach number according to domain value;
+  :calculate entropy and Riemann valable according to domain value;
+  :correct Density,Velocity accoring to Riemann value,P_ext; and calculate v_outlet;
+  #lightblue:<color:white>Transform v_unsteady into characteristic variable</color>;
+  #lightblue:<color:white>Impose Giles BC </color>;
+   if(1D) 
+  #lightblue:  C_i=0;
+  else(2D)
+  #lightblue:  partial differential of C_i;
+    endif
+  #lightblue::Transform characteristic variable into v_unsteady;
+  :set conv_scheme,using V_domain as left state, v_outlet as right state;
+  :calculate flux;
+@enduml

@@ -1,0 +1,47 @@
+@startuml1
+title CDriver Structure
+CDriver--.CDriverBase
+CSinglezoneDriver--.CDriver
+CMultizoneDriver--.CDriver
+newpage
+title Cintegration Structure
+CMultiGridIntegration--.Cintegration
+CNewtonIntegration--.Cintegration
+CSingleGridIntegration--.Cintegration
+newpage
+title CIteration Structure
+CTurboIteration--.CFluidIteration
+
+newpage
+title CSolver Structure
+CNSSolver--.CEulerSolver
+CEulerSolver--.CFVMFlowSolverBase
+CFVMFlowSolverBase--.Csolver
+CTurbSSTSolver--.CTurbSolver
+CTurbSASolver--.CTurbSolver
+CTurbSolver--.CScalarSolver
+CScalarSolver--.Csolver
+CBaselineSolver--.Csolver
+
+newpage
+title COutput Structure
+CMultizoneOutput--.Coutput
+CMeshOutput--.Coutput
+CFVMOutput--.Coutput
+CBaselineOutput--.Coutput
+CFlowCompOutput--.CFlowOutput
+CFlowCompFEMOutput--.CFlowOutput
+CFlowOutput--.CFVMOutput
+
+newpage
+title CVariable Structure
+CBaselineVariable--.Cvariable
+CMeshVariable--.Cvariable
+CNSVariable--.CEulerVariable
+CEulerVariable--.CFlowVariable
+CFlowVariable--.Cvariable
+CTurbSAVariable--.CTurbVariable
+CTurbSSTVariable--.CTurbVariable
+CTurbVariable--.CScalarVariable
+CScalarVariable--.Cvariable
+@endumld
