@@ -348,7 +348,7 @@ def RunFluidSolver(comm,myid,FluidSolver,FSI_config):
         print("**********************************\n")
 
     # --- External temporal loop --- #
-    for iTer in range(10):
+    for iTer in range(100):
         for TimeIter in range(FSI_config["NUM_HB"]):
             if iTer==0:
                 FluidSolver.Preprocess(
@@ -366,8 +366,9 @@ def RunFluidSolver(comm,myid,FluidSolver,FSI_config):
         FluidSolver.Run()
         print('run')
         comm.barrier()
-        #FluidSolver.Postprocess()
-        #comm.barrier()
+        #for TimeIter in range(FSI_config["NUM_HB"]):
+        #    FluidSolver.Postprocess(TimeIter)
+        #    comm.barrier()
 
             # --- Surface fluid loads interpolation and communication --- #
 
@@ -382,8 +383,8 @@ def RunFluidSolver(comm,myid,FluidSolver,FSI_config):
             if iTer==0:
                 FluidSolver.Monitor(TimeIter)
                 print('monitor')
-        if iTer==0:
-            FluidSolver.Output(TimeIter)
+        #if iTer==0:
+        FluidSolver.Output(iTer)
         print('output')
 
     # --- End of the temporal loop --- #

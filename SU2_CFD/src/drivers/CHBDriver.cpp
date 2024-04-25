@@ -840,3 +840,15 @@ void CHBDriver::ComputeHBOperator() {
   delete [] Omega_HB,TimeLag_HB;
 
 }
+void CHBDriver::Postprocess(unsigned short iInst) {
+
+  iteration_container[ZONE_0][iInst]->Postprocess(output_container[ZONE_0], integration_container, geometry_container, solver_container,
+      numerics_container, config_container, surface_movement, grid_movement, FFDBox, ZONE_0, iInst);
+
+  /*--- A corrector step can help preventing numerical instabilities ---*/
+
+  if (config_container[ZONE_0]->GetRelaxation())
+    iteration_container[ZONE_0][iInst]->Relaxation(output_container[ZONE_0], integration_container, geometry_container, solver_container,
+        numerics_container, config_container, surface_movement, grid_movement, FFDBox, ZONE_0, iInst);
+
+}

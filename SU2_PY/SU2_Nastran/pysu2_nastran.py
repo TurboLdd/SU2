@@ -71,7 +71,8 @@ class ImposedMotionClass:
             )
 
     def GetDispl(self, time):
-        time = time - self.time0 - self.timeStart
+        #hard coding
+        #time = time - self.time0 - self.timeStart
         if self.typeOfMotion == "SINUSOIDAL":
             if (time < 0.0) or (time > self.timeStop):
                 return 0.0
@@ -89,7 +90,8 @@ class ImposedMotionClass:
             return self.amplitude
 
     def GetVel(self, time):
-        time = time - self.time0 - self.timeStart
+        #hard coding
+        #time = time - self.time0 - self.timeStart
 
         if self.typeOfMotion == "SINUSOIDAL":
             if (time < 0.0) or (time > self.timeStop):
@@ -456,9 +458,10 @@ class Solver:
                     self.node.append(Point())
                     line = line.split(',')
                     ID = iPoint
-                    x = float(line[0])
-                    y = float(line[1])
-                    z = float(line[2])
+                    x = float(line[0])/1000.0
+                    y = float(line[1])/1000.0
+                    z = float(line[2])/1000.0
+                    #print(x,y,z)
                     self.node[iPoint].SetCoord((x, y, z))
                     self.node[iPoint].SetID(ID)
                     self.node[iPoint].SetCoord0((x, y, z))
@@ -1032,7 +1035,7 @@ class Solver:
                     time
                 )
             self.a = np.copy(self.qddot)
-
+            
     def __SetLoads(self):
         """
         This method uses the nodal forces and the mode shapes to obtain the modal forces.

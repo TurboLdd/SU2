@@ -93,7 +93,7 @@ class CHBDriver : public CFluidDriver {
     }
   }
 
-  void Postprocess() ;
+  void Postprocess(unsigned short iInst) ;
   
   unsigned long GetMarkerNode(unsigned short iMarker, unsigned long iVertex, unsigned short iInst) const {
     if (iVertex >= GetNumberMarkerNodes(iMarker, iInst)) {  //
