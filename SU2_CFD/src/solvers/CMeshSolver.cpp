@@ -477,17 +477,17 @@ void CMeshSolver::SetMesh_Stiffness(CNumerics **numerics, CConfig *config){
 void CMeshSolver::DeformMesh(CGeometry **geometry, CNumerics **numerics, CConfig *config){
 
   if (multizone) nodes->Set_BGSSolution_k();
-
+  cout<<"before comm AD"<<endl;
   /*--- Capture a few MPI dependencies for AD. ---*/
   geometry[MESH_0]->InitiateComms(geometry[MESH_0], config, COORDINATES);
   geometry[MESH_0]->CompleteComms(geometry[MESH_0], config, COORDINATES);
-
+ cout<<"after comm AD"<<endl;
   InitiateComms(geometry[MESH_0], config, SOLUTION);
   CompleteComms(geometry[MESH_0], config, SOLUTION);
-
+ cout<<"solution comm done"<<endl;
   InitiateComms(geometry[MESH_0], config, MESH_DISPLACEMENTS);
   CompleteComms(geometry[MESH_0], config, MESH_DISPLACEMENTS);
-
+ cout<<"displacement comm done"<<endl;
   /*--- Compute the stiffness matrix, no point recording because we clear the residual. ---*/
 
   const bool wasActive = AD::BeginPassive();
@@ -512,19 +512,19 @@ void CMeshSolver::DeformMesh(CGeometry **geometry, CNumerics **numerics, CConfig
 
   /*--- Impose boundary conditions (all of them are ESSENTIAL BC's - displacements). ---*/
   SetBoundaryDisplacements(geometry[MESH_0], config, false);
-
+cout<<"boundary done"<<endl;
   /*--- Solve the linear system. ---*/
   Solve_System(geometry[MESH_0], config);
-
+cout<<"solve done"<<endl;
   SU2_OMP_PARALLEL {
 
   /*--- Update the grid coordinates and cell volumes using the solution
      of the linear system (usol contains the x, y, z displacements). ---*/
   UpdateGridCoord(geometry[MESH_0], config);
-
+cout<<"updategrid done"<<endl;
   /*--- Update the dual grid. ---*/
   CGeometry::UpdateGeometry(geometry, config);
-
+cout<<"updategeom done"<<endl;
   /*--- Check for failed deformation (negative volumes). ---*/
   SetMinMaxVolume(geometry[MESH_0], config, true);
 

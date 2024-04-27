@@ -852,3 +852,26 @@ void CHBDriver::Postprocess(unsigned short iInst) {
         numerics_container, config_container, surface_movement, grid_movement, FFDBox, ZONE_0, iInst);
 
 }
+
+void CHBDriver::DynamicMeshUpdate(unsigned long iInst) {
+  bool harmonic_balance;
+
+        cout<<"before_setgridmovement"<<iInst<<" inst and "<<rank<<" rank"<<endl;
+        /*--- Legacy dynamic mesh update - Only if GRID_MOVEMENT = YES ---*/
+        iteration_container[ZONE_0][iInst]->SetGrid_Movement(geometry_container[ZONE_0][iInst], surface_movement[ZONE_0],
+                                                            grid_movement[ZONE_0][iInst], solver_container[ZONE_0][iInst],
+                                                            config_container[ZONE_0], 0,iInst);
+        cout<<"done_setgridmovement"<<iInst<<" inst and "<<rank<<" rank"<<endl;
+        /*--- New solver - all the other routines in SetGrid_Movement should be adapted to this one ---*/
+        /*--- Works if DEFORM_MESH = YES ---*/
+        iteration_container[ZONE_0][iInst]->SetMesh_Deformation(
+            geometry_container[ZONE_0][iInst], solver_container[ZONE_0][iInst][MESH_0],
+            numerics_container[ZONE_0][iInst][MESH_0], config_container[ZONE_0], RECORDING::CLEAR_INDICES);
+        cout << "done_setmeshdeform" << iInst << " inst and " << rank << " rank" << endl;
+        /*--- Update the wall distances if the mesh was deformed. ---*/
+        if (config_container[ZONE_0]->GetGrid_Movement() || config_container[ZONE_0]->GetDeform_Mesh()) {
+          CGeometry::ComputeWallDistance(config_container, geometry_container);
+          cout << "done_walldist" << iInst << " inst and " << rank << " rank" << endl;
+        }
+      }
+    

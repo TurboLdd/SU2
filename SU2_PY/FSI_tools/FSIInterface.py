@@ -3402,8 +3402,7 @@ class InterfaceHB(Interface):
                     int(iVertex),
                     np.array([DispX, DispY, DispZ]),iInst
                 )
-                if iVertex<10:
-                    print("______________DispX, DispY, DispZ_________",DispX, DispY, DispZ)
+
                 localIndex += 1        
     def interfaceMapping(self, FluidSolver, SolidSolver, FSI_config):
         """

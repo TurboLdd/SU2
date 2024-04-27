@@ -185,15 +185,15 @@ void CIteration::SetMesh_Deformation(CGeometry** geometry, CSolver** solver, CNu
     /*--- In any other recordings, the tape is passive during the deformation. ---*/
     wasActive = AD::BeginPassive();
   }
-
+cout<<"setstiffness"<<rank<<endl;
   /*--- Set the stiffness of each element mesh into the mesh numerics ---*/
 
   solver[MESH_SOL]->SetMesh_Stiffness(numerics[MESH_SOL], config);
-
+cout<<"deformmesh"<<rank<<endl;
   /*--- Deform the volume grid around the new boundary locations ---*/
 
   solver[MESH_SOL]->DeformMesh(geometry, numerics[MESH_SOL], config);
-
+cout<<"deformmesh done"<<rank<<endl;
   /*--- Continue recording. ---*/
   AD::EndPassive(wasActive);
 }

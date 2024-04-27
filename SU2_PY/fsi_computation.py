@@ -186,6 +186,8 @@ def main():
                 if have_MPI:
                     comm.barrier()
                 FSIInterface[iInst].interfaceMapping(FluidSolver, SolidSolver[iInst], FSI_config)
+                if have_MPI:
+                    comm.barrier()
 
             else:
                 
@@ -201,8 +203,8 @@ def main():
                 if have_MPI:
                     comm.barrier()
                 FSIInterface[iInst].interfaceMapping(FluidSolver, None, FSI_config)
-    if have_MPI:
-        comm.barrier()
+                if have_MPI:
+                    comm.barrier()
 
     
     else:
@@ -354,17 +356,18 @@ def RunFluidSolver(comm,myid,FluidSolver,FSI_config):
                 FluidSolver.Preprocess(
                     TimeIter
                 )  # set some parameters before temporal fluid iteration and dynamic mesh update
-        
-            FluidSolver.DynamicMeshUpdate(TimeIter)
+                print(f"dynamic{TimeIter}")
+                FluidSolver.DynamicMeshUpdate(TimeIter)
 
             # --- Fluid solver call for FSI subiteration --- #
         if myid==0:
             print("\nLaunching fluid solver for one single dual-time iteration..."
         )
+        print("for debug",myid)
         comm.barrier()
 
         FluidSolver.Run()
-        print('run')
+        
         comm.barrier()
         #for TimeIter in range(FSI_config["NUM_HB"]):
         #    FluidSolver.Postprocess(TimeIter)
@@ -379,13 +382,13 @@ def RunFluidSolver(comm,myid,FluidSolver,FSI_config):
             # --- Update, monitor and output the fluid solution before the next time step  ---#
 
             FluidSolver.Update()
-            print('update')
+            
             if iTer==0:
                 FluidSolver.Monitor(TimeIter)
-                print('monitor')
+                
         #if iTer==0:
         FluidSolver.Output(iTer)
-        print('output')
+        
 
     # --- End of the temporal loop --- #
 

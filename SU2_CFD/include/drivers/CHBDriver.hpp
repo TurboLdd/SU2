@@ -163,4 +163,6 @@ bool GetNodeDomain(unsigned long iPoint,unsigned short iInst) const {
     return CPyWrapperMatrixView(*coords, "InitialCoordinates", true);
   }
  unsigned short GetnInst(){return nInstHB;}
+
+ void DynamicMeshUpdate(unsigned long TimeIter)override;
 };
