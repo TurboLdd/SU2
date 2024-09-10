@@ -76,6 +76,7 @@ protected:
   su2double
   Eddy_Viscosity_i,  /*!< \brief Eddy viscosity at point i. */
   Eddy_Viscosity_j;  /*!< \brief Eddy viscosity at point j. */
+  su2double PgomegaBridge; /*!< \brief Bridge between Compute residual and node variable. */
   su2double
   turb_ke_i,  /*!< \brief Turbulent kinetic energy at point i. */
   turb_ke_j;  /*!< \brief Turbulent kinetic energy at point j. */
@@ -806,6 +807,13 @@ public:
                                su2double val_eddy_viscosity_j) {
     Eddy_Viscosity_i = val_eddy_viscosity_i;
     Eddy_Viscosity_j = val_eddy_viscosity_j;
+  }
+  //out put the pgomega variable
+  inline void SetPgomegaBridge(su2double pgoBridge){
+    PgomegaBridge = pgoBridge;
+  }
+  inline su2double GetPgomegaBridge(){
+    return PgomegaBridge ;
   }
 
   /*!
