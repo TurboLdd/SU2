@@ -1925,7 +1925,7 @@ bool COutput::WriteScreenOutput(const CConfig *config) {
   if (convergence) {return true;}
 
   if (!PrintOutput(curOuterIter, ScreenWrt_Freq_Outer) &&
-      !(curOuterIter == config->GetnOuter_Iter() - 1)){
+      !(curOuterIter == config->GetnOuter_Iter() - 1)&&config->GetMultizone_Problem()){
 
     return false;
 
